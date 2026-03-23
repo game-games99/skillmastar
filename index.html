@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SKILL MASTER - 終焉の塔 - Ver 1.1.0</title>
+    <title>SKILL MASTER - 終焉の塔 - Ver 1.2.0</title>
     <style>
         :root {
             --bg: #0f172a; --panel: #1e293b; --text: #f8fafc;
@@ -16,32 +16,35 @@
         #game-layout { display: flex; flex-direction: column; height: 100%; gap: 5px; }
         .card { background: var(--panel); border-radius: 8px; padding: 8px; border: 1px solid #334155; }
 
-        /* Gauges */
-        .g-wrap { width: 100%; background: #020617; height: 16px; border-radius: 4px; margin: 2px 0; overflow: hidden; position: relative; border: 1px solid #475569; }
+        /* Gauges with Text */
+        .g-wrap { width: 100%; background: #020617; height: 18px; border-radius: 4px; margin: 3px 0; overflow: hidden; position: relative; border: 1px solid #475569; }
         .g-bar { height: 100%; transition: width 0.3s; }
-        .g-txt { position: absolute; width: 100%; text-align: center; font-size: 9px; line-height: 16px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+        .g-txt { position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 18px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
 
-        /* Tabs System */
-        .tabs { display: flex; gap: 2px; margin-bottom: 5px; }
-        .tab { flex: 1; padding: 6px 2px; border: none; background: #334155; color: #94a3b8; cursor: pointer; border-radius: 4px; font-size: 11px; }
-        .tab.active { background: var(--primary); color: white; font-weight: bold; }
-        .tab-content { display: none; height: 100px; overflow-y: auto; }
-        .tab-content.active { display: block; }
-
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 11px; }
-        .eq-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        .eq-item { background: #0f172a; padding: 4px; border-radius: 4px; font-size: 10px; border: 1px solid #475569; }
-
-        /* Center Action */
-        .action-area { display: flex; flex-direction: column; gap: 5px; }
-        .btn-main { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 0 #0284c7; }
-        .btn-main:active { transform: translateY(2px); box-shadow: none; }
-
-        .log { flex: 1; min-height: 120px; overflow-y: auto; background: #020617; border-radius: 6px; padding: 8px; font-size: 11px; line-height: 1.4; border: 1px solid #334155; }
+        /* Main Tabs System */
+        .tabs { display: flex; gap: 3px; margin-bottom: 5px; }
+        .tab { flex: 1; padding: 10px 2px; border: none; background: #334155; color: #94a3b8; cursor: pointer; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .tab.active { background: var(--primary); color: white; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3); }
         
-        .skill-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        .skill-node { padding: 5px; background: #0f172a; border: 1px solid #334155; border-radius: 4px; font-size: 10px; }
-        .skill-node.owned { border-color: var(--accent); color: var(--accent); }
+        /* Content Area (Fixed Height to prevent scroll) */
+        .tab-content { display: none; flex: 1; overflow: hidden; flex-direction: column; gap: 5px; }
+        .tab-content.active { display: flex; }
+
+        /* Battle Tab UI */
+        .enemy-box { background: #020617; border: 1px solid var(--danger); padding: 6px; border-radius: 6px; }
+        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #0284c7; margin: 5px 0; }
+        .btn-main:active { transform: translateY(2px); box-shadow: none; }
+        
+        .log { flex: 1; overflow-y: auto; background: #020617; border-radius: 6px; padding: 8px; font-size: 11px; line-height: 1.6; border: 1px solid #334155; }
+        .log div { border-bottom: 1px dotted #1e293b; padding: 2px 0; }
+
+        /* Other Tabs UI */
+        .scroll-view { flex: 1; overflow-y: auto; padding-right: 2px; }
+        .stat-row { display: flex; justify-content: space-between; padding: 8px; background: #0f172a; margin-bottom: 4px; border-radius: 4px; }
+        .eq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .skill-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .node { padding: 8px; background: #0f172a; border-radius: 6px; border: 1px solid #334155; font-size: 11px; }
+        .node.owned { border-color: var(--accent); color: var(--accent); }
 
         #start-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
     </style>
@@ -49,53 +52,57 @@
 <body>
 
 <div id="start-screen">
-    <h1 style="color:var(--primary); margin:0;">SKILL MASTER</h1>
-    <p style="color:#94a3b8; font-size:12px;">初期ジョブを選択してください</p>
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; width:100%; max-width:300px; margin-top:20px;">
-        <button class="tab active" style="padding:15px;" onclick="gameInit('Warrior')">戦士</button>
-        <button class="tab active" style="padding:15px;" onclick="gameInit('Mage')">魔術師</button>
-        <button class="tab active" style="padding:15px;" onclick="gameInit('Thief')">盗賊</button>
-        <button class="tab active" style="padding:15px;" onclick="gameInit('Cleric')">聖職者</button>
+    <h1 style="color:var(--primary); font-size: 42px; margin:0;">SKILL MASTER</h1>
+    <p style="color:#94a3b8;">初期ジョブを選択して登頂を開始せよ</p>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; width:100%; max-width:320px; margin-top:30px;">
+        <button class="tab active" style="padding:20px;" onclick="gameInit('Warrior')">戦士</button>
+        <button class="tab active" style="padding:20px;" onclick="gameInit('Mage')">魔術師</button>
+        <button class="tab active" style="padding:20px;" onclick="gameInit('Thief')">盗賊</button>
+        <button class="tab active" style="padding:20px;" onclick="gameInit('Cleric')">聖職者</button>
     </div>
 </div>
 
 <div id="game-layout" style="display:none;">
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2 id="job-name" style="margin:0; color:var(--primary); font-size:18px;">---</h2>
-            <div id="lv-disp" style="font-weight:bold; color:var(--accent);">Lv.1 / 1F</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span id="job-name" style="color:var(--primary); font-weight:bold; font-size:16px;">---</span>
+            <span id="lv-disp" style="color:var(--accent); font-weight:bold;">Lv.1 / 1F</span>
         </div>
-        
         <div class="g-wrap"><div id="hp-bar" class="g-bar" style="background:var(--hp);"></div><div id="hp-txt" class="g-txt"></div></div>
         <div class="g-wrap"><div id="mp-bar" class="g-bar" style="background:var(--mp);"></div><div id="mp-txt" class="g-txt"></div></div>
         <div class="g-wrap"><div id="exp-bar" class="g-bar" style="background:var(--exp);"></div><div id="exp-txt" class="g-txt"></div></div>
     </div>
 
-    <div class="card">
-        <div class="tabs">
-            <button class="tab active" id="t-stat" onclick="showTab('stat')">能力</button>
-            <button class="tab" id="t-eq" onclick="showTab('eq')">装備</button>
-            <button class="tab" id="t-skill" onclick="showTab('skill')">スキル</button>
-            <button class="tab" id="t-job" onclick="showTab('job')">職位</button>
-        </div>
-        <div id="v-stat" class="tab-content active"><div class="stat-grid" id="stats-grid"></div></div>
-        <div id="v-eq" class="tab-content"><div class="eq-list" id="eq-ui"></div></div>
-        <div id="v-skill" class="tab-content"><div class="skill-grid" id="skill-list"></div></div>
-        <div id="v-job" class="tab-content" style="font-size:10px; color:#94a3b8;">転職条件未達成...</div>
+    <div class="tabs">
+        <button class="tab active" id="t-btl" onclick="showTab('btl')">⚔️ 戦闘</button>
+        <button class="tab" id="t-stat" onclick="showTab('stat')">📊 能力</button>
+        <button class="tab" id="t-eq" onclick="showTab('eq')">🛡️ 装備</button>
+        <button class="tab" id="t-skl" onclick="showTab('skl')">📜 スキル</button>
     </div>
 
-    <div class="action-area">
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; font-size:11px;">
-                <span id="target-name" style="color:var(--danger); font-weight:bold;">索敵中...</span>
-                <span id="target-info"></span>
+    <div id="v-btl" class="tab-content active">
+        <div class="enemy-box">
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:2px;">
+                <span id="e-name" style="color:var(--danger); font-weight:bold;">索敵中...</span>
+                <span id="e-info" style="color:#94a3b8;"></span>
             </div>
             <div class="g-wrap"><div id="e-hp-bar" class="g-bar" style="background:var(--danger);"></div><div id="e-hp-txt" class="g-txt"></div></div>
         </div>
-        <button class="btn-main" onclick="tick()">塔を攻略 / 攻撃</button>
+        <button class="btn-main" onclick="tick()">塔を探索 / 攻撃</button>
+        <div class="log" id="log"></div>
     </div>
 
-    <div class="log" id="log"></div>
+    <div id="v-stat" class="tab-content">
+        <div class="scroll-view" id="stats-list"></div>
+    </div>
+
+    <div id="v-eq" class="tab-content">
+        <div class="scroll-view eq-grid" id="eq-ui"></div>
+    </div>
+
+    <div id="v-skl" class="tab-content">
+        <div class="scroll-view skill-grid" id="skill-list"></div>
+    </div>
 </div>
 
 <script>
@@ -127,8 +134,7 @@ function load() {
         p = JSON.parse(data);
         document.getElementById('start-screen').style.display = 'none';
         document.getElementById('game-layout').style.display = 'flex';
-        refresh();
-        return true;
+        refresh(); return true;
     }
     return false;
 }
@@ -139,42 +145,57 @@ function getStats() {
     const eqA = (e.武器.v * e.武器.q/100) + (e.アクセ1.v * e.アクセ1.q/100);
     const eqD = (e.防具.v * e.防具.q/100) + (e.アクセ2.v * e.アクセ2.q/100);
     return {
-        mHp: Math.floor(p.base.hp * j.bonus.hp), mMp: Math.floor(p.base.mp * j.bonus.mp),
+        mH: Math.floor(p.base.hp * j.bonus.hp), mM: Math.floor(p.base.mp * j.bonus.mp),
         atk: Math.floor((p.base.atk+eqA)*j.bonus.atk), def: Math.floor((p.base.def+eqD)*j.bonus.def),
         spd: p.base.spd, hit: p.base.hit, eva: p.base.eva
     };
 }
 
-function gameInit(job) { p.job = job; const s = getStats(); p.hp = s.mHp; p.mp = s.mMp; save(); load(); }
+function gameInit(job) { p.job = job; const s = getStats(); p.hp = s.mH; p.mp = s.mM; save(); location.reload(); }
 
 function tick() {
     const s = getStats();
     if (!enemy) {
         const isB = (p.prg >= p.f); const mul = 1 + (p.f * 0.5);
-        enemy = { n: isB ? `${p.f}F 守護者` : `${RACES[Math.floor(Math.random()*10)]}の兵`, 
+        enemy = { n: isB ? `【${p.f}F 守護者】` : `${RACES[Math.floor(Math.random()*10)]}の兵`, 
                   hp: Math.floor((isB?2000:300)*mul), mH: Math.floor((isB?2000:300)*mul), 
                   atk: Math.floor((isB?80:40)*mul), def: Math.floor((isB?60:25)*mul), exp: Math.floor(100*mul), isB };
-        log(`${enemy.n}出現。`); refresh(); return;
+        log(`🔎 ${enemy.n}と遭遇した！`, "#94a3b8"); refresh(); return;
     }
+
+    // Player Phase
     let d = Math.max(1, s.atk - enemy.def);
     p.skills.forEach(sid => {
         const sk = SKILL_DB[sid-1];
         if (sk.type === "Act" && Math.random()*100 < sk.rate && p.mp >= sk.mp) {
             p.mp -= sk.mp; d = Math.floor(d * sk.atkMul);
-            log(`【${sk.name}】! ${d}点`, "var(--accent)");
+            log(`⚡ スキル【${sk.name}】発動！ ${d}ダメージ！`, "var(--accent)");
         }
     });
     enemy.hp -= d;
+    log(`⚔️ あなたの攻撃：${enemy.n}に ${d} のダメージ。`, "var(--primary)");
+
     if (enemy.hp <= 0) {
-        log(`${enemy.n}撃破`, "var(--hp)"); p.k++; p.exp += enemy.exp;
-        if (enemy.isB) { p.f++; p.prg = 0; log(`✨${p.f-1}F 踏破`, "var(--accent)"); } else { p.prg++; }
-        if (p.exp >= p.lv * 150) { p.lv++; p.exp=0; p.base.hp+=40; p.base.atk+=6; p.base.def+=4; log(`🌟LvUP!`, "var(--accent)"); }
+        log(`✅ ${enemy.n}を倒した！`, "var(--hp)");
+        p.k++; p.exp += enemy.exp;
+        if (enemy.isB) { p.f++; p.prg = 0; log(`✨ ${p.f-1}階を踏破。新たな階層へ。`, "var(--accent)"); } 
+        else { p.prg++; }
+        if (p.exp >= p.lv * 150) { p.lv++; p.exp=0; p.base.hp+=40; p.base.atk+=6; p.base.def+=4; log(`🌟 レベルアップ！ Lv.${p.lv} になった。`, "var(--accent)"); }
         checkSkills(); enemy = null; drop(); save(); refresh(); return;
     }
+
+    // Enemy Phase
     if (Math.random()*100 > s.eva) {
-        let ed = Math.max(1, enemy.atk - s.def); p.hp -= ed; log(`反撃:${ed}`, "var(--danger)");
-    } else { log("回避!"); }
-    if (p.hp <= 0) { p.f = Math.max(1, p.f-1); p.prg=0; p.hp=s.mHp; p.mp=s.mMp; enemy=null; log("敗北...", "var(--danger)"); save(); }
+        let ed = Math.max(1, enemy.atk - s.def); p.hp -= ed; 
+        log(`💥 ${enemy.n}の攻撃：${ed} のダメージを受けた。`, "var(--danger)");
+    } else {
+        log(`💨 攻撃を華麗に回避した！`, "var(--primary)");
+    }
+
+    if (p.hp <= 0) {
+        log(`☠️ 力尽きた... 階層を戻される。`, "var(--danger)");
+        p.f = Math.max(1, p.f-1); p.prg=0; p.hp=s.mH; p.mp=s.mM; enemy=null; save();
+    }
     refresh();
 }
 
@@ -182,11 +203,11 @@ function drop() {
     if (Math.random() > 0.3) return;
     const k = Object.keys(p.eq); const sl = k[Math.floor(Math.random()*k.length)];
     const q = Math.floor(Math.random()*100)+1; const v = 10+(p.f*5);
-    if (v*q > p.eq[sl].v*p.eq[sl].q) { p.eq[sl] = { n: sl+"+", v, q }; log(`💎${sl}更新`, "var(--primary)"); }
+    if (v*q > p.eq[sl].v*p.eq[sl].q) { p.eq[sl] = { n: sl+"+", v, q }; log(`💎 新たな装備【${sl}】を入手した！`, "var(--accent)"); }
 }
 
 function checkSkills() {
-    SKILL_DB.forEach(sk => { if (!p.skills.includes(sk.id) && p.k >= sk.reqK) { p.skills.push(sk.id); log(`📜習得:${sk.name}`, "var(--accent)"); } });
+    SKILL_DB.forEach(sk => { if (!p.skills.includes(sk.id) && p.k >= sk.reqK) { p.skills.push(sk.id); log(`📜 新たなスキル【${sk.name}】を習得した！`, "var(--accent)"); } });
 }
 
 function showTab(id) {
@@ -194,14 +215,33 @@ function showTab(id) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('v-'+id).classList.add('active');
     document.getElementById('t-'+id).classList.add('active');
-    if (id === 'skill') renderSkills();
+    if (id === 'stat') renderStats();
+    if (id === 'eq') renderEq();
+    if (id === 'skl') renderSkills();
+}
+
+function renderStats() {
+    const s = getStats();
+    const list = document.getElementById('stats-list');
+    const data = [
+        {l:"攻撃力", v:s.atk}, {l:"防御力", v:s.def}, {l:"素早さ", v:s.spd},
+        {l:"命中率", v:s.hit+"%"}, {l:"回避率", v:s.eva+"%"}, {l:"総討伐数", v:p.k}
+    ];
+    list.innerHTML = data.map(d => `<div class="stat-row"><span>${d.l}</span><b>${d.v}</b></div>`).join('');
+}
+
+function renderEq() {
+    const ui = document.getElementById('eq-ui'); ui.innerHTML = "";
+    Object.entries(p.eq).forEach(([sl, item]) => {
+        ui.innerHTML += `<div class="node"><b>${sl}</b><br>${item.n}<br><span style="color:var(--accent)">品質:${item.q}%</span></div>`;
+    });
 }
 
 function renderSkills() {
     const list = document.getElementById('skill-list'); list.innerHTML = "";
-    SKILL_DB.slice(0, 50).forEach(sk => {
+    SKILL_DB.slice(0, 40).forEach(sk => {
         const has = p.skills.includes(sk.id);
-        list.innerHTML += `<div class="skill-node ${has?'owned':''}"><strong>${has?sk.name:'?'}</strong><br>${has?sk.type:sk.reqK+'K'}</div>`;
+        list.innerHTML += `<div class="node ${has?'owned':''}"><b>${has?sk.name:'？？？'}</b><br>${has?sk.type:sk.reqK+'Kills'}</div>`;
     });
 }
 
@@ -209,25 +249,24 @@ function refresh() {
     const s = getStats(); const next = p.lv * 150;
     document.getElementById('job-name').innerText = JOBS[p.job].name;
     document.getElementById('lv-disp').innerText = `Lv.${p.lv} / ${p.f}F`;
-    document.getElementById('hp-bar').style.width = `${(p.hp/s.mHp)*100}%`;
-    document.getElementById('hp-txt').innerText = `HP ${p.hp} / ${s.mHp}`;
-    document.getElementById('mp-bar').style.width = `${(p.mp/s.mMp)*100}%`;
-    document.getElementById('mp-txt').innerText = `MP ${p.mp} / ${s.mMp}`;
+    
+    document.getElementById('hp-bar').style.width = `${(p.hp/s.mH)*100}%`;
+    document.getElementById('hp-txt').innerText = `HP ${p.hp} / ${s.mH}`;
+    document.getElementById('mp-bar').style.width = `${(p.mp/s.mM)*100}%`;
+    document.getElementById('mp-txt').innerText = `MP ${p.mp} / ${s.mM}`;
     document.getElementById('exp-bar').style.width = `${(p.exp/next)*100}%`;
     document.getElementById('exp-txt').innerText = `EXP ${p.exp} / ${next}`;
-    document.getElementById('stats-grid').innerHTML = `<div>ATK: ${s.atk}</div><div>DEF: ${s.def}</div><div>SPD: ${s.spd}</div><div>Kills: ${p.k}</div>`;
-    const eqUi = document.getElementById('eq-ui'); eqUi.innerHTML = "";
-    Object.entries(p.eq).forEach(([sl, item]) => {
-        eqUi.innerHTML += `<div class="eq-item"><b>${sl}</b><br>${item.n}<br><span style="color:var(--accent)">Q:${item.q}%</span></div>`;
-    });
+
     if (enemy) {
-        document.getElementById('target-name').innerText = enemy.n;
+        document.getElementById('e-name').innerText = enemy.n;
         document.getElementById('e-hp-bar').style.width = `${(enemy.hp/enemy.mH)*100}%`;
         document.getElementById('e-hp-txt').innerText = `${enemy.hp} / ${enemy.mH}`;
-        document.getElementById('target-info').innerText = `A:${enemy.atk} D:${enemy.def}`;
+        document.getElementById('e-info').innerText = `ATK:${enemy.atk} DEF:${enemy.def}`;
     } else {
-        document.getElementById('target-name').innerText = "索敵中...";
-        document.getElementById('e-hp-bar').style.width = "0%"; document.getElementById('e-hp-txt').innerText = "";
+        document.getElementById('e-name').innerText = "索敵中...";
+        document.getElementById('e-hp-bar').style.width = "0%";
+        document.getElementById('e-hp-txt').innerText = "";
+        document.getElementById('e-info').innerText = "";
     }
 }
 
@@ -235,6 +274,8 @@ function log(m, c) {
     const w = document.getElementById('log');
     w.innerHTML += `<div style="color:${c||'#f8fafc'}">${m}</div>`;
     w.scrollTop = w.scrollHeight;
+    // ログ過多防止（最新50件維持）
+    if (w.childNodes.length > 50) w.removeChild(w.firstChild);
 }
 
 window.onload = () => { if (!load()) document.getElementById('start-screen').style.display = 'flex'; };

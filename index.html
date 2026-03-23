@@ -2,273 +2,328 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>SKILL MASTER - 終焉の塔 - Ver 1.2.0</title>
+    <title>SKILL MASTER - 終焉の塔 - Ver 1.4.0</title>
     <style>
         :root {
-            --bg: #fdfdfd;
-            --card: #ffffff;
-            --p-color: #3498db;
-            --warrior: #e74c3c;
-            --mage: #9b59b6;
-            --thief: #1abc9c;
-            --cleric: #f1c40f;
-            --danger: #ff3e3e;
-            --gold: #d4af37;
+            --bg: #eceff1; --card: #ffffff; --primary: #2980b9;
+            --warrior: #c0392b; --mage: #8e44ad; --thief: #16a085; --cleric: #f39c12;
+            --gold: #d4af37; --danger: #e74c3c; --text: #2c3e50;
         }
-        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; transition: background 1s; }
-        #game-wrapper { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
-        .card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.06); border: 1px solid #eee; position: relative; overflow: hidden; }
+        body { background: var(--bg); font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 20px; color: var(--text); }
+        #game-wrapper { width: 100%; max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+        .card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #cfd8dc; position: relative; }
+        .full-width { grid-column: span 2; }
         
-        /* ボス演出用：画面振動 */
-        .shake { animation: shake 0.5s infinite; }
-        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, -1px); } }
-
-        /* ボス演出：背景 */
-        .boss-bg { background: #1a1a1a !important; color: #fff !important; }
-        .boss-name-plate { font-size: 2em; color: var(--danger); text-shadow: 0 0 10px #ff0000; font-weight: bold; text-align: center; margin: 10px 0; }
-
-        h1 { color: var(--p-color); border-bottom: 2px solid; padding-bottom: 5px; }
-        .gauge-bg { width: 100%; background: #eee; height: 18px; border-radius: 9px; margin: 5px 0 15px 0; position: relative; overflow: hidden; border: 1px solid #ccc; }
-        .gauge-in { height: 100%; transition: width 0.3s; }
-        .hp-in { background: linear-gradient(90deg, #ff7675, #d63031); }
-        .mp-in { background: linear-gradient(90deg, #74b9ff, #0984e3); }
-        .g-txt { position: absolute; width: 100%; text-align: center; font-size: 11px; line-height: 18px; font-weight: bold; color: #333; }
-
-        .btn-main { background: var(--p-color); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 1.1em; font-weight: bold; width: 100%; margin-top: 10px; }
-        .btn-main:active { transform: scale(0.98); }
-        .log { height: 350px; overflow-y: auto; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee; font-size: 13px; line-height: 1.6; }
+        /* Job Select Overlay */
+        #start-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: #263238; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; }
+        .job-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
         
-        .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab { padding: 10px; border: none; background: #ddd; border-radius: 6px; cursor: pointer; flex: 1; font-weight: bold; }
-        .tab.active { background: var(--p-color); color: white; }
+        /* Stats & Gauges */
+        .gauge-bg { width: 100%; background: #cfd8dc; height: 16px; border-radius: 8px; margin: 5px 0 12px 0; overflow: hidden; position: relative; border: 1px solid #b0bec5; }
+        .gauge-in { height: 100%; transition: width 0.4s ease-in-out; }
+        .hp-in { background: linear-gradient(90deg, #ff5252, #d32f2f); }
+        .mp-in { background: linear-gradient(90deg, #40c4ff, #0288d1); }
+        .g-txt { position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 16px; font-weight: bold; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.5); }
 
-        .skill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-        .skill-box { padding: 8px; background: #fff; border: 1px solid #eee; border-radius: 6px; font-size: 11px; }
-        .owned { border-left: 4px solid var(--gold); background: #fffdf0; }
-        .warning { color: var(--danger); font-weight: bold; animation: blink 0.8s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        /* Buttons & Tabs */
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; background: var(--primary); color: white; box-shadow: 0 3px 0 #1a5276; }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 0 #1a5276; }
+        .btn:disabled { background: #b0bec5; box-shadow: none; cursor: not-allowed; opacity: 0.6; }
+        .tab-bar { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab { padding: 12px; border: none; background: #e0e0e0; border-radius: 8px; cursor: pointer; flex: 1; font-weight: bold; color: #546e7a; }
+        .tab.active { background: var(--primary); color: white; }
+
+        /* Log & Content */
+        .log { height: 350px; overflow-y: auto; background: #fafafa; border: 1px solid #e0e0e0; padding: 15px; border-radius: 10px; font-size: 13.5px; line-height: 1.7; margin-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+        .box { padding: 12px; border: 1px solid #eee; border-radius: 8px; font-size: 11px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .owned { border-left: 5px solid var(--gold); background: #fffde7; }
+        .req-info { font-size: 11px; color: #e74c3c; margin-top: 5px; font-weight: bold; }
+        
+        /* Boss Effect */
+        .boss-active { animation: earthquake 0.5s infinite; background: #212121 !important; color: #eee !important; }
+        @keyframes earthquake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(2px, -2px); } 75% { transform: translate(-2px, 2px); } }
     </style>
 </head>
 <body>
 
-<h1>🏰 SKILL MASTER <small>Ver 1.2.0</small></h1>
+<div id="start-screen">
+    <h1 style="font-size: 3em; color: var(--gold);">SKILL MASTER</h1>
+    <p>終焉の塔の頂を目指す者よ、己の起源を選択せよ</p>
+    <div class="job-grid">
+        <button class="btn" style="background:var(--warrior)" onclick="initGame('warrior')">戦士の血脈<br><small>Physical & Vitality</small></button>
+        <button class="btn" style="background:var(--mage)" onclick="initGame('mage')">魔導の深淵<br><small>Magic & Mana</small></button>
+        <button class="btn" style="background:var(--thief)" onclick="initGame('thief')">技巧の極致<br><small>Speed & Critical</small></button>
+        <button class="btn" style="background:var(--cleric)" onclick="initGame('cleric')">聖なる福音<br><small>Defense & Holy</small></button>
+    </div>
+</div>
 
-<div id="game-wrapper">
-    <div class="card" id="player-card">
-        <h2 id="p-job-name" style="margin:0;">戦士</h2>
-        <div id="p-lv" style="font-size: 12px; color: #777;">Lv.1</div>
-        <div id="p-prog" style="margin: 10px 0; font-weight: bold; font-size: 14px;"></div>
+<div id="game-wrapper" style="display:none;">
+    <div class="card" id="side-card">
+        <h2 id="p-job-display" style="margin:0; color: var(--primary);">---</h2>
+        <div id="p-lv-floor" style="font-size: 13px; color: #78909c; margin-bottom: 15px;">LV.1 / 1F</div>
         
-        <label style="font-size:10px;">HP</label>
-        <div class="gauge-bg"><div id="hp-bar" class="gauge-in hp-in"></div><div id="hp-t" class="g-txt"></div></div>
-        <label style="font-size:10px;">MP</label>
-        <div class="gauge-bg"><div id="mp-bar" class="gauge-in mp-in"></div><div id="mp-t" class="g-txt"></div></div>
+        <div class="gauge-bg"><div id="hp-bar" class="gauge-in hp-in"></div><div id="hp-t" class="g-txt">HP 0/0</div></div>
+        <div class="gauge-bg"><div id="mp-bar" class="gauge-in mp-in"></div><div id="mp-t" class="g-txt">MP 0/0</div></div>
         
-        <div id="p-stats" style="font-size: 13px;"></div>
+        <div id="p-stats-list" style="font-size: 13px; background: #f1f8e9; padding: 10px; border-radius: 8px;"></div>
+        
+        <div id="equip-area" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+            <div style="font-size: 12px; font-weight: bold;">[現在の装備品]</div>
+            <div id="eq-w" style="font-size: 11px;">🪓 ---</div>
+            <div id="eq-a" style="font-size: 11px;">🛡️ ---</div>
+        </div>
     </div>
 
     <div class="card" id="enemy-card">
-        <div id="e-header">
-            <h2 id="e-name" style="margin:0;">索敵中...</h2>
-            <div id="e-kind" style="font-size: 12px; color: #888;">---</div>
+        <div id="e-status">
+            <h2 id="e-name" style="margin:0; color: var(--danger);">索敵中...</h2>
+            <div id="e-floor-prog" style="font-size: 12px; margin: 8px 0;"></div>
+            <div class="gauge-bg"><div id="e-hp-bar" class="gauge-in hp-in"></div><div id="e-hp-t" class="g-txt">---</div></div>
+            <div id="e-stats-line" style="font-size: 12px; color: #546e7a;"></div>
         </div>
-        <div id="boss-display"></div>
-        <div class="gauge-bg"><div id="e-hp-bar" class="gauge-in hp-in"></div><div id="e-hp-t" class="g-txt"></div></div>
-        <div id="e-info" style="font-size: 12px; color: #666;"></div>
     </div>
 
     <div class="card full-width">
         <div class="tab-bar">
-            <button class="tab active" onclick="showTab('battle')">⚔️ 戦闘</button>
-            <button class="tab" onclick="showTab('skill')">📜 スキル</button>
-            <button class="tab" onclick="showTab('job')">👑 転職</button>
-            <button class="tab" onclick="showTab('sys')">💾 セーブ</button>
+            <button class="tab active" onclick="switchTab('battle')">⚔️ 遠征</button>
+            <button class="tab" onclick="switchTab('skill')">📜 スキル(<span id="skl-count">0</span>)</button>
+            <button class="tab" onclick="switchTab('job')">👑 昇職条件</button>
+            <button class="tab" onclick="saveData()">💾 記録</button>
         </div>
 
-        <div id="view-battle">
-            <div class="log" id="log-win"></div>
-            <button class="btn-main" onclick="action()">進む / 攻撃</button>
+        <div id="v-battle">
+            <div class="log" id="game-log"></div>
+            <button class="btn" style="width:100%; height: 60px; font-size: 1.2em;" onclick="battleCore()">進軍する / 攻撃</button>
         </div>
 
-        <div id="view-skill" style="display:none;"><div class="skill-grid" id="skill-list"></div></div>
-        <div id="view-job" style="display:none;"><div id="job-list"></div></div>
-        <div id="view-sys" style="display:none; text-align: center;">
-            <button class="btn-main" onclick="save()">データを記録する</button>
-        </div>
+        <div id="v-skill" style="display:none;"><div class="grid" id="s-list-box"></div></div>
+        <div id="v-job" style="display:none;"><div id="j-list-box"></div></div>
     </div>
 </div>
 
 <script>
-// --- ジョブツリー設計 ---
+// --- MASTER DATA: 200 Unique Skills ---
+const SKILL_NAMES = ["旋風斬","灼熱弾","鉄壁","祈り","影縫い","閃光突き","大地砕き","瞑想","毒刃","聖域","重力球","雷鳴斬","自己治癒","心眼","吸血掌","氷槍","剛力","瞬身","金剛","崩落"];
+const SKILL_DB = Array.from({length: 200}, (_, i) => {
+    const baseIndex = i % SKILL_NAMES.length;
+    const tier = Math.floor(i / 20) + 1;
+    const name = (tier > 1 ? (tier === 5 ? "神・" : "極・") : "") + SKILL_NAMES[baseIndex] + (tier > 1 ? "" : " Lv"+(i+1));
+    const type = (i % 5 === 0) ? "active" : "passive";
+    return {
+        id: i + 1, name, type,
+        atk: i * 2, def: i, hp: i * 15,
+        mult: 1.5 + (i * 0.03), mp: 10 + Math.floor(i/3), cond: i * 4,
+        category: (i % 4) // 0:戦士系 1:魔導系 2:技巧系 3:聖職者系
+    };
+});
+
 const JOBS = {
-    "warrior": { name: "戦士", color: "var(--warrior)", bonus: {atk: 1.4, def: 1.2, hp: 1.5, mp: 0.6}, next: ["knight", "berserker"] },
-    "mage": { name: "魔術師", color: "var(--mage)", bonus: {atk: 0.8, def: 0.7, hp: 0.8, mp: 2.5}, next: ["wizard", "sage"] },
-    "thief": { name: "盗賊", color: "var(--thief)", bonus: {atk: 1.1, def: 0.9, hp: 0.9, mp: 1.0}, next: ["assassin", "ninja"] },
-    "cleric": { name: "聖職者", color: "var(--cleric)", bonus: {atk: 0.8, def: 1.3, hp: 1.3, mp: 2.0}, next: ["paladin", "bishop"] },
-    "knight": { name: "騎士", color: "var(--warrior)", bonus: {atk: 1.6, def: 2.0, hp: 2.0, mp: 1.2} },
-    "berserker": { name: "狂戦士", color: "var(--warrior)", bonus: {atk: 2.8, def: 0.6, hp: 1.8, mp: 0.5} },
-    "wizard": { name: "大魔導師", color: "var(--mage)", bonus: {atk: 1.2, def: 0.8, hp: 1.0, mp: 4.0} },
-    "sage": { name: "賢者", color: "var(--mage)", bonus: {atk: 1.5, def: 1.5, hp: 1.5, mp: 3.0} },
-    "assassin": { name: "暗殺者", color: "var(--thief)", bonus: {atk: 2.4, def: 0.8, hp: 1.0, mp: 1.2} },
-    "ninja": { name: "忍者", color: "var(--thief)", bonus: {atk: 2.0, def: 1.0, hp: 1.2, mp: 1.5} },
-    "paladin": { name: "聖騎士", color: "var(--cleric)", bonus: {atk: 1.6, def: 2.5, hp: 2.5, mp: 1.8} },
-    "bishop": { name: "司教", color: "var(--cleric)", bonus: {atk: 1.0, def: 1.8, hp: 2.0, mp: 3.5} }
+    "warrior": { name: "戦士", bonus: {atk:1.4, def:1.2, hp:1.5, mp:0.8}, next: ["knight", "berserker"] },
+    "mage": { name: "魔術師", bonus: {atk:0.8, def:0.8, hp:0.9, mp:2.6}, next: ["wizard", "sage"] },
+    "thief": { name: "盗賊", bonus: {atk:1.2, def:0.9, hp:1.0, mp:1.2}, next: ["assassin", "ninja"] },
+    "cleric": { name: "聖職者", bonus: {atk:0.9, def:1.4, hp:1.4, mp:1.9}, next: ["paladin", "bishop"] },
+    // Tier 2 - Higher Requirements
+    "knight": { name: "聖騎士", reqLv: 30, reqFloor: 30, reqSkillCount: 15, reqStat: "def", statVal: 150, bonus: {atk:1.8, def:2.5, hp:2.5, mp:1.4} },
+    "berserker": { name: "狂戦士", reqLv: 35, reqFloor: 30, reqSkillCount: 15, reqStat: "atk", statVal: 200, bonus: {atk:3.5, def:0.6, hp:2.0, mp:0.5} },
+    "wizard": { name: "大賢者", reqLv: 30, reqFloor: 30, reqSkillCount: 15, reqStat: "mp", statVal: 300, bonus: {atk:1.5, def:1.2, hp:1.2, mp:5.0} },
+    "sage": { name: "大導師", reqLv: 35, reqFloor: 30, reqSkillCount: 20, reqStat: "mp", statVal: 400, bonus: {atk:2.0, def:2.0, hp:2.0, mp:3.5} },
+    "assassin": { name: "暗殺者", reqLv: 30, reqFloor: 30, reqSkillCount: 15, reqStat: "atk", statVal: 180, bonus: {atk:3.0, def:0.9, hp:1.2, mp:1.5} },
+    "ninja": { name: "忍", reqLv: 35, reqFloor: 30, reqSkillCount: 20, reqStat: "atk", statVal: 220, bonus: {atk:2.5, def:1.3, hp:1.5, mp:2.0} },
+    "paladin": { name: "守護騎士", reqLv: 30, reqFloor: 30, reqSkillCount: 15, reqStat: "def", statVal: 180, bonus: {atk:1.6, def:3.0, hp:3.0, mp:2.0} },
+    "bishop": { name: "大司教", reqLv: 35, reqFloor: 30, reqSkillCount: 20, reqStat: "hp", statVal: 1000, bonus: {atk:1.2, def:2.2, hp:2.5, mp:4.5} }
 };
 
-const SKILLS = Array.from({length: 200}, (_, i) => ({
-    id: i+1, name: (i%2===0?"武":"魔") + "の深淵 Lv"+(i+1), type: i%5===0?"active":"passive",
-    effect: { atk: i+2, def: i+1, hp: i*10 }, mult: 1.5+(i*0.04), mp: 10+(i/2), cond: i*3
-}));
-
-let p = { lv: 1, exp: 0, floor: 1, progress: 0, kills: 0, job: "warrior", hp: 200, mp: 100, skills: [1], eq: {w:10, a:10} };
+// --- Player State ---
+let p = {
+    job: "warrior", lv: 1, exp: 0, floor: 1, prog: 0, kills: 0, hp: 300, mp: 100,
+    skills: [1],
+    w: {n: "古びた剣", v: 10, q: 60}, a: {n: "布の服", v: 10, q: 60}
+};
 let enemy = null;
 
 function getStats() {
     const j = JOBS[p.job];
     let sA=0, sD=0, sH=0;
-    p.skills.forEach(id => { const sk = SKILLS[id-1]; if(sk.type==="passive"){ sA+=sk.effect.atk; sD+=sk.effect.def; sH+=sk.effect.hp; } });
+    p.skills.forEach(id => {
+        const sk = SKILL_DB[id-1];
+        if(sk.type === "passive") { sA += sk.atk; sD += sk.def; sH += sk.hp; }
+    });
     return {
-        atk: Math.floor((30 + sA + p.eq.w + p.lv*3) * j.bonus.atk),
-        def: Math.floor((20 + sD + p.eq.a + p.lv*2) * j.bonus.def),
-        mHp: Math.floor((200 + sH + p.lv*20) * j.bonus.hp),
-        mMp: Math.floor((100 + p.lv*10) * j.bonus.mp)
+        atk: Math.floor((40 + sA + (p.w.v * p.w.q/100) + p.lv*4) * j.bonus.atk),
+        def: Math.floor((30 + sD + (p.a.v * p.a.q/100) + p.lv*3) * j.bonus.def),
+        mHp: Math.floor((300 + sH + p.lv*30) * j.bonus.hp),
+        mMp: Math.floor((100 + p.lv*15) * j.bonus.mp)
     };
+}
+
+function initGame(jobId) {
+    p.job = jobId;
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-wrapper').style.display = 'grid';
+    const s = getStats(); p.hp = s.mHp; p.mp = s.mMp;
+    refresh();
 }
 
 function refresh() {
     const s = getStats();
-    const jobData = JOBS[p.job];
-    document.getElementById('p-job-name').innerText = jobData.name;
-    document.getElementById('p-job-name').style.color = jobData.color;
-    document.getElementById('p-lv').innerText = `LEVEL ${p.lv} / FLOOR ${p.floor}F`;
+    document.getElementById('p-job-display').innerText = JOBS[p.job].name;
+    document.getElementById('p-lv-floor').innerText = `LEVEL ${p.lv} / ${p.floor}F`;
     document.getElementById('hp-bar').style.width = `${(p.hp/s.mHp)*100}%`;
-    document.getElementById('hp-t').innerText = `${p.hp}/${s.mHp}`;
+    document.getElementById('hp-t').innerText = `HP ${p.hp}/${s.mHp}`;
     document.getElementById('mp-bar').style.width = `${(p.mp/s.mMp)*100}%`;
-    document.getElementById('mp-t').innerText = `${p.mp}/${s.mMp}`;
+    document.getElementById('mp-t').innerText = `MP ${p.mp}/${s.mMp}`;
+    document.getElementById('skl-count').innerText = p.skills.length;
     
-    const progBox = document.getElementById('p-prog');
-    if(p.progress >= p.floor) progBox.innerHTML = `<span class="warning">⚠ BOSS WARNING ⚠</span>`;
-    else progBox.innerText = `探索距離: ${p.progress} / ${p.floor}`;
+    document.getElementById('p-stats-list').innerHTML = `
+        ⚔️ 攻撃力: ${s.atk} / 🛡️ 防御力: ${s.def}<br>
+        🎯 累計討伐: ${p.kills} / 📜 習得技術: ${p.skills.length}種
+    `;
+    document.getElementById('eq-w').innerText = `🪓 ${p.w.n} (+${Math.floor(p.w.v * p.w.q/100)}) Q:${p.w.q}%`;
+    document.getElementById('eq-a').innerText = `🛡️ ${p.a.n} (+${Math.floor(p.a.v * p.a.q/100)}) Q:${p.a.q}%`;
 
-    document.getElementById('p-stats').innerHTML = `ATK: ${s.atk} / DEF: ${s.def} / KILLS: ${p.kills}`;
-    
+    const prog = document.getElementById('e-floor-prog');
+    if(p.prog >= p.floor) {
+        prog.innerHTML = `<span style="color:var(--danger); font-weight:bold; animation: blink 0.5s infinite;">⚠ 階層守護者が出現中 ⚠</span>`;
+    } else {
+        prog.innerText = `現在地の踏破率: ${Math.floor((p.prog/p.floor)*100)}% (${p.prog}/${p.floor})`;
+    }
+
     if(enemy) {
-        document.getElementById('e-name').innerText = enemy.name;
+        document.getElementById('e-name').innerText = enemy.isB ? `【${p.floor}F 守護者】` : enemy.name;
         document.getElementById('e-hp-bar').style.width = `${(enemy.hp/enemy.mHp)*100}%`;
         document.getElementById('e-hp-t').innerText = `${enemy.hp}/${enemy.mHp}`;
-        document.getElementById('e-info').innerText = `ATK: ${enemy.atk} / DEF: ${enemy.def}`;
+        document.getElementById('e-stats-line').innerText = `ATK: ${enemy.atk} / DEF: ${enemy.def} / EXP: ${enemy.exp}`;
+        if(enemy.isB) document.getElementById('enemy-card').classList.add('boss-active');
+        else document.getElementById('enemy-card').classList.remove('boss-active');
+    } else {
+        document.getElementById('enemy-card').classList.remove('boss-active');
     }
 }
 
-function action() {
+function battleCore() {
+    const s = getStats();
     if(!enemy) {
-        const isBoss = (p.progress >= p.floor);
-        const isLastBoss = (p.floor === 100 && isBoss);
-        const m = 1 + (p.floor * 0.2);
-        
+        const isB = p.prog >= p.floor;
+        const mul = 1 + (p.floor * 0.3);
         enemy = {
-            name: isLastBoss ? "【終焉を統べる者】" : (isBoss ? `${p.floor}F 守護者` : "塔の魔物"),
-            isBoss: isBoss,
-            hp: Math.floor((isBoss?600:120)*m), mHp: Math.floor((isBoss?600:120)*m),
-            atk: Math.floor((isBoss?45:18)*m), def: Math.floor((isBoss?35:12)*m), exp: Math.floor(50*m)
+            name: "塔の凶魔", isB,
+            hp: Math.floor((isB?1000:180)*mul), mHp: Math.floor((isB?1000:180)*mul),
+            atk: Math.floor((isB?60:25)*mul), def: Math.floor((isB?45:15)*mul), exp: Math.floor(70*mul)
         };
-
-        if(isLastBoss) {
-            document.body.classList.add('boss-bg');
-            document.getElementById('enemy-card').classList.add('shake');
-            document.getElementById('boss-display').innerHTML = `<div class="boss-name-plate">GOD OF END</div>`;
-            log("！！！！！ 世界の終焉が目の前に現れた ！！！！！", "var(--danger)");
-        } else if(isBoss) {
-            log(`${enemy.name} が立ち塞がる！`, "var(--danger)");
-        } else {
-            log(`${enemy.name} と遭遇。`);
-        }
+        log(`新たな脅威：${enemy.name} と遭遇した！`);
         refresh(); return;
     }
 
-    const s = getStats();
+    // Player Phase
     let dmg = Math.max(1, s.atk - enemy.def);
     p.skills.forEach(id => {
-        const sk = SKILLS[id-1];
-        if(sk.type==="active" && Math.random()<0.25 && p.mp >= sk.mp) {
+        const sk = SKILL_DB[id-1];
+        if(sk.type === "active" && Math.random() < 0.22 && p.mp >= sk.mp) {
             p.mp -= sk.mp; dmg = Math.floor(dmg * sk.mult);
-            log(`スキル発動【${sk.name}】！`, "var(--gold)");
+            log(`奥義【${sk.name}】が炸裂！ ${dmg}ダメージを与えた！`, "var(--gold)");
         }
     });
     enemy.hp -= dmg;
-    log(`${enemy.name}に ${dmg} ダメージ！`);
+    if(!dmg > 1) log(`${enemy.name}に ${dmg}ダメージ。`);
 
     if(enemy.hp <= 0) {
-        log(`${enemy.name} を撃破。`, "var(--p-color)");
+        log(`${enemy.name}を完全に沈黙させた。`, "var(--primary)");
         p.kills++; p.exp += enemy.exp;
-        if(enemy.isBoss) {
-            log(`✨ ${p.floor}階層 踏破完了。`, "var(--gold)");
-            if(p.floor === 100) alert("おめでとうございます！あなたは終焉の塔を制覇しました！");
-            p.floor++; p.progress = 0;
-            document.body.classList.remove('boss-bg');
-            document.getElementById('enemy-card').classList.remove('shake');
-            document.getElementById('boss-display').innerHTML = "";
+        if(enemy.isB) {
+            log(`✨ 階層主を撃破！ ${p.floor}Fの鍵を手に入れた。`, "var(--gold)");
+            p.floor++; p.prog = 0; dropGear(true);
         } else {
-            p.progress++;
+            p.prog++; if(Math.random() < 0.15) dropGear(false);
         }
-        if(p.exp >= p.lv*100) { p.lv++; p.exp=0; log("🌟 レベルアップ！", "var(--gold)"); }
-        checkSkills(); enemy = null; refresh(); return;
+        
+        if(p.exp >= p.lv * 120) { p.lv++; p.exp = 0; log("🌟 潜在能力が解放された（レベルアップ）", "var(--gold)"); }
+        updateSkills(); enemy = null; refresh(); return;
     }
 
+    // Enemy Phase
     let edmg = Math.max(1, enemy.atk - s.def);
     p.hp -= edmg;
-    log(`${enemy.name} の反撃！ ${edmg} のダメージ。`, "var(--danger)");
+    log(`${enemy.name}の猛攻！ ${edmg}ダメージを負った。`, "var(--danger)");
     if(p.hp <= 0) {
-        log("💀 敗北... 意識が遠のく。(5階層戻されました)", "var(--danger)");
-        p.floor = Math.max(1, p.floor-5); p.progress = 0;
-        p.hp = s.mHp; p.mp = s.mMp; enemy = null;
-        document.body.classList.remove('boss-bg');
-        document.getElementById('enemy-card').classList.remove('shake');
+        log("💀 力尽きた... 塔の魔力により下層へ転送される。", "var(--danger)");
+        p.floor = Math.max(1, p.floor - 5); p.prog = 0;
+        p.hp = Math.floor(s.mHp * 0.5); p.mp = s.mMp; enemy = null;
     }
     refresh();
 }
 
-function checkSkills() {
-    SKILLS.forEach(sk => { if(!p.skills.includes(sk.id) && p.kills >= sk.cond) { p.skills.push(sk.id); log(`✨ 新スキル習得: ${sk.name}`, "var(--gold)"); } });
+function dropGear(isBoss) {
+    const q = Math.floor(Math.random() * (isBoss?41:81)) + (isBoss?60:20); // Boss drops higher quality
+    const isW = Math.random() > 0.5;
+    const baseVal = 10 + (p.floor * 6);
+    const names = isW ? ["鋼鉄の剣","魔力の杖","暗殺短刀","錫杖"] : ["重厚な鎧","魔導の衣","忍装束","司教の法衣"];
+    const newItem = { n: names[Math.floor(Math.random()*4)], v: baseVal, q: q };
+    
+    const curVal = isW ? (p.w.v * p.w.q) : (p.a.v * p.a.q);
+    if((newItem.v * newItem.q) > curVal) {
+        if(isW) p.w = newItem; else p.a = newItem;
+        log(`💎 逸品を獲得：${newItem.n} (品質 ${q}%)`, "var(--primary)");
+    }
 }
 
-function showTab(t) {
-    document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display='none');
+function updateSkills() {
+    SKILL_DB.forEach(sk => {
+        if(!p.skills.includes(sk.id) && p.kills >= sk.cond) {
+            p.skills.push(sk.id);
+            log(`✨ 新たな境地：スキル【${sk.name}】に目覚めた！`, "var(--gold)");
+        }
+    });
+}
+
+function switchTab(t) {
+    document.querySelectorAll('[id^="v-"]').forEach(v => v.style.display='none');
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-    document.getElementById(`view-${t}`).style.display='block';
+    document.getElementById(`v-${t}`).style.display='block';
     event.currentTarget.classList.add('active');
-    if(t==='skill') {
-        const l = document.getElementById('skill-list'); l.innerHTML = "";
-        SKILLS.forEach(sk => {
+    
+    if(t === 'skill') {
+        const box = document.getElementById('s-list-box'); box.innerHTML = "";
+        SKILL_DB.forEach(sk => {
             const has = p.skills.includes(sk.id);
-            l.innerHTML += `<div class="skill-box ${has?'owned':''}"><strong>${has?sk.name:'？？？'}</strong><br><small>${has? (sk.type==='active'?'威力'+sk.mult.toFixed(1)+'倍':'常時強化') : '討伐'+sk.cond}</small></div>`;
+            box.innerHTML += `<div class="box ${has?'owned':''}">
+                <strong>${has?sk.name:'？？？'}</strong><br>
+                <small>${has? (sk.type==='active'?'威力:'+sk.mult.toFixed(1)+'倍':'[常時] 強化') : '討伐数 '+sk.cond+' で解放'}</small>
+            </div>`;
         });
     }
-    if(t==='job') {
-        const l = document.getElementById('job-list'); l.innerHTML = "";
-        const cur = JOBS[p.job];
-        if(cur.next) cur.next.forEach(id => {
-            const b = document.createElement('button'); b.className="btn-main"; b.style.marginBottom="10px"; b.style.background=JOBS[id].color;
-            b.innerText = JOBS[id].name + " へ転職";
-            b.onclick = () => { p.job=id; log(`${JOBS[id].name} に転職しました！`); showTab('job'); refresh(); };
-            l.appendChild(b);
-        }); else l.innerText = "この系統の極致に達しています。";
+    if(t === 'job') {
+        const box = document.getElementById('j-list-box'); box.innerHTML = "";
+        const curJob = JOBS[p.job];
+        if(curJob.next) {
+            curJob.next.forEach(id => {
+                const nj = JOBS[id];
+                const stats = getStats();
+                const conds = [
+                    { label: `Lv.${nj.reqLv}`, ok: p.lv >= nj.reqLv },
+                    { label: `${nj.reqFloor}F到達`, ok: p.floor >= nj.reqFloor },
+                    { label: `スキル${nj.reqSkillCount}種`, ok: p.skills.length >= nj.reqSkillCount },
+                    { label: `${nj.reqStat.toUpperCase()}:${nj.statVal}`, ok: stats[nj.reqStat === 'mp' ? 'mMp' : (nj.reqStat === 'hp' ? 'mHp' : nj.reqStat)] >= nj.statVal }
+                ];
+                const allOk = conds.every(c => c.ok);
+                let html = `<div class="card" style="margin-bottom:10px; border-left: 5px solid ${allOk? 'var(--primary)':'#ccc'};">
+                    <strong>${nj.name}</strong><div class="req-info">`;
+                conds.forEach(c => html += `<span style="color:${c.ok?'green':'red'}">${c.ok?'✔':'✘'} ${c.label}</span> `);
+                html += `</div><button class="btn" style="margin-top:10px;" ${allOk?'':'disabled'} onclick="changeJob('${id}')">昇職する</button></div>`;
+                box.innerHTML += html;
+            });
+        } else box.innerHTML = "<p>貴方は既に職業の極致にあります。</p>";
     }
 }
 
-function log(m, c="#2d3436") {
-    const w = document.getElementById('log-win');
-    w.innerHTML += `<div style="color:${c}">${m}</div>`;
+function changeJob(id) { p.job = id; log(`🎊 祝：${JOBS[id].name} に昇職しました！`); switchTab('job'); refresh(); }
+function log(m, c) {
+    const w = document.getElementById('game-log');
+    w.innerHTML += `<div style="color:${c||'#2c3e50'}">${m}</div>`;
     w.scrollTop = w.scrollHeight;
 }
-
-function save() { localStorage.setItem('SKILLMASTER_PRO_120', JSON.stringify(p)); alert("セーブしました。"); }
-function init() {
-    const s = localStorage.getItem('SKILLMASTER_PRO_120');
-    if(s) p = JSON.parse(s);
-    refresh();
-}
-init();
+function saveData() { localStorage.setItem('SKILLMASTER_V140', JSON.stringify(p)); alert("魂の記憶を保存しました。"); }
+(function init() { const s = localStorage.getItem('SKILLMASTER_V140'); if(s) p = JSON.parse(s); refresh(); })();
 </script>
 </body>
 </html>

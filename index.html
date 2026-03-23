@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+　<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スキルマスター - 神の塔踏破記 - Ver 0.3.0</title>
+    <title>スキルマスター - 神の塔踏破記 - Ver 0.3.1</title>
     <style>
         :root {
             --bg-color: #050505;
@@ -40,7 +40,7 @@
 </head>
 <body>
 
-<h1>スキルマスター <small style="font-size: 0.5em;">Ver 0.3.0 [200 Skills Loaded]</small></h1>
+<h1>スキルマスター <small style="font-size: 0.5em;">Ver 0.3.1 [Purged Legacy Rules]</small></h1>
 
 <div id="game-container">
     <div class="panel">
@@ -85,25 +85,24 @@
 </div>
 
 <script>
-// --- データ定義 (200スキル生成) ---
+// --- データ定義 (200スキル) ---
 const SKILL_MASTER = [];
 for(let i=1; i<=200; i++) {
     const id = "S" + String(i).padStart(3, '0');
     let s = { id: id, name: `スキル${id}`, type: "passive", desc: "", effect: {}, condition: {} };
-    
-    if(i <= 50) { // 初級: Lv, Floor
+    if(i <= 50) {
         s.name = ["強打", "瞑想", "皮膜", "俊敏", "集中"][i%5] + (Math.floor(i/5)+1);
         s.type = i%3 === 0 ? "active" : "passive";
         s.condition = { type: "lv", val: i * 2 };
         if(s.type === "active") { s.rate = 0.1 + (i*0.002); s.mp = 10 + i; s.mult = 1.5 + (i*0.02); s.desc = `威力${s.mult.toFixed(1)}倍`; }
         else { s.effect = { atk: i, hp: i*5 }; s.desc = `ATK+${i}, HP+${i*5}`; }
-    } else if(i <= 150) { // 中級: Kill, Floor, Status
+    } else if(i <= 150) {
         s.name = ["属性剣", "魔力盾", "不屈", "神速", "略奪"][i%5] + (Math.floor(i/5));
         s.type = i%4 === 0 ? "active" : "passive";
         s.condition = { type: "kill", val: i * 10 };
         if(s.type === "active") { s.rate = 0.15; s.mp = 25; s.mult = 3.0; s.desc = "高威力攻撃"; }
         else { s.effect = { def: i/2, spd: i/5 }; s.desc = `DEF+${Math.floor(i/2)}`; }
-    } else { // 上級・究極: 90F+, High Kill
+    } else {
         s.name = ["虚空", "因果", "転生", "神殺", "深淵"][i%5] + "の極み";
         s.type = "active";
         s.condition = { type: "floor", val: 90 + (i%11) };
@@ -143,7 +142,6 @@ let p = {
 let enemy = null;
 
 // --- ロジック ---
-
 function updateUI() {
     const j = JOBS[p.job];
     let bAtk=0, bDef=0, bHp=0, bMp=0, bSpd=0;
@@ -181,15 +179,15 @@ function updateUI() {
 }
 
 function spawn() {
-    const m = 1 + (p.floor * 0.2);
+    const m = 1 + (p.floor * 0.25);
     const isBoss = p.floor % 10 === 0;
     enemy = {
         name: isBoss ? `${p.floor}F 守護神` : `階層の魔物`,
-        hp: Math.floor((isBoss ? 500 : 80) * m),
-        mHp: Math.floor((isBoss ? 500 : 80) * m),
-        atk: Math.floor((isBoss ? 40 : 15) * m),
-        def: Math.floor((isBoss ? 30 : 10) * m),
-        exp: Math.floor(30 * m)
+        hp: Math.floor((isBoss ? 600 : 100) * m),
+        mHp: Math.floor((isBoss ? 600 : 100) * m),
+        atk: Math.floor((isBoss ? 45 : 18) * m),
+        def: Math.floor((isBoss ? 35 : 12) * m),
+        exp: Math.floor(40 * m)
     };
     log(`[${p.floor}F] ${enemy.name}が現れた！`, isBoss ? var(--accent-color) : "#fff");
     updateUI();
@@ -198,66 +196,57 @@ function spawn() {
 function battleTurn() {
     if(!enemy) return;
     const j = JOBS[p.job];
-    const curAtk = Math.floor((p.atk + (p.equips.w.v * p.equips.w.q/100)) * j.bonus.atk);
-    const curDef = Math.floor((p.def + (p.equips.a.v * p.equips.a.q/100)) * j.bonus.def);
+    const totalAtk = Math.floor((p.atk + (p.equips.w.v * p.equips.w.q/100)) * j.bonus.atk);
+    const totalDef = Math.floor((p.def + (p.equips.a.v * p.equips.a.q/100)) * j.bonus.def);
 
-    // Player Attack
-    let dmg = Math.max(1, curAtk - enemy.def);
+    let dmg = Math.max(1, totalAtk - enemy.def);
     p.skills.forEach(id => {
         const s = SKILL_MASTER.find(m => m.id === id);
         if(s && s.type === "active" && Math.random() < s.rate && p.mp >= s.mp) {
             p.mp -= s.mp; dmg = Math.floor(dmg * s.mult);
-            log(`スキル発動【${s.name}】威力増大！`, var(--mp-color));
+            log(`【${s.name}】が発動！`, var(--mp-color));
         }
     });
     enemy.hp -= dmg;
-    log(`${enemy.name}に ${dmg} ダメージ！`);
+    log(`${enemy.name}に ${dmg} のダメージ！`);
 
     if(enemy.hp <= 0) {
-        log(`${enemy.name}を殲滅！ 経験値${enemy.exp}獲得。`, var(--accent-color));
+        log(`${enemy.name}を討伐。`, var(--accent-color));
         p.kills++; p.exp += enemy.exp;
-        if(p.exp >= p.lv * 100) levelUp();
-        checkUnlocks();
-        drop();
-        p.floor++; spawn();
+        if(p.exp >= p.lv * 120) levelUp();
+        checkUnlocks(); drop(); p.floor++; spawn();
         return;
     }
 
-    // Enemy Attack
-    let edmg = Math.max(1, enemy.atk - curDef);
+    let edmg = Math.max(1, enemy.atk - totalDef);
     p.hp -= edmg;
-    log(`${enemy.name}の攻撃！ ${edmg} ダメージ！`, "#f55");
+    log(`${enemy.name}の攻撃！ ${edmg} のダメージ！`, "#f55");
 
     if(p.hp <= 0) {
-        log("敗北... 再起の誓い発動。HP/MP全快。", "#f00");
-        p.hp = 999999; p.mp = 999999; // 一時的に最大値へ
-        updateUI();
-        p.hp = parseInt(document.getElementById('hp-text').innerText.split('/')[1]);
-        p.mp = parseInt(document.getElementById('mp-text').innerText.split('/')[1]);
+        log("敗北した... 塔の魔力に押し返された。", "#f00");
+        p.floor = Math.max(1, p.floor - 5); // 5階層戻される
+        p.hp = 1; // 瀕死で帰還
+        spawn();
     }
     updateUI();
 }
 
 function levelUp() {
     p.lv++; p.exp = 0;
-    p.mHp += Math.floor(Math.random()*20)+10; p.mMp += Math.floor(Math.random()*10)+5;
-    p.atk += Math.floor(Math.random()*5)+2; p.def += Math.floor(Math.random()*5)+2;
-    p.spd += Math.floor(Math.random()*3)+1;
-    log(`Lv.${p.lv}に到達！能力がランダムに上昇した。`, var(--accent-color));
+    p.mHp += Math.floor(Math.random()*15)+5; p.mMp += Math.floor(Math.random()*8)+3;
+    p.atk += Math.floor(Math.random()*4)+1; p.def += Math.floor(Math.random()*4)+1;
+    p.spd += Math.floor(Math.random()*2)+1;
+    log(`Lv.${p.lv}に上昇！`, var(--accent-color));
 }
 
 function drop() {
-    if(Math.random() > 0.4) return;
+    if(Math.random() > 0.35) return;
     const q = Math.floor(Math.random()*100)+1;
     const isW = Math.random() > 0.5;
-    const val = 10 + Math.floor(p.floor * 2.5);
-    const newItem = { n: (isW?"神石の剣":"魔鋼の鎧"), v: val, q: q };
-    
-    const curVal = isW ? (p.equips.w.v * p.equips.w.q/100) : (p.equips.a.v * p.equips.a.q/100);
-    const newVal = val * q / 100;
-
-    if(newVal > curVal) {
-        log(`★装備更新: ${newItem.n} (品質${q}%)`, var(--rarity-star));
+    const newItem = { n: (isW?"神石の剣":"魔鋼の鎧"), v: 10 + Math.floor(p.floor * 2.2), q: q };
+    const curV = isW ? (p.equips.w.v * p.equips.w.q/100) : (p.equips.a.v * p.equips.a.q/100);
+    if((newItem.v * q/100) > curV) {
+        log(`★装備更新: ${newItem.n} (${q}%)`, var(--rarity-star));
         if(isW) p.equips.w = newItem; else p.equips.a = newItem;
     }
 }
@@ -300,7 +289,7 @@ function log(m, c="#fff") {
     e.scrollTop = e.scrollHeight;
 }
 
-function saveGame() { localStorage.setItem('SKILLMASTER_SAVE', JSON.stringify(p)); log("刻印完了。"); }
+function saveGame() { localStorage.setItem('SKILLMASTER_SAVE', JSON.stringify(p)); log("進行状況を保存しました。"); }
 function load() { const d = localStorage.getItem('SKILLMASTER_SAVE'); if(d) p = JSON.parse(d); spawn(); updateUI(); }
 
 window.onload = load;

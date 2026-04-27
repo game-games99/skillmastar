@@ -2,254 +2,199 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SKILL MASTER - Ver 1.5.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chalice Knights Clone</title>
     <style>
-        :root { --bg: #0f172a; --panel: #1e293b; --text: #f8fafc; --primary: #38bdf8; --accent: #fbbf24; --danger: #ef4444; --hp: #10b981; --mp: #6366f1; --exp: #a855f7; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 10px; font-size: 14px; height: 100vh; overflow: hidden; }
-        #game-layout { display: flex; flex-direction: column; height: 100%; gap: 8px; max-width: 500px; margin: 0 auto; }
-        .card { background: var(--panel); border-radius: 12px; padding: 10px; border: 1px solid #334155; }
-        .g-wrap { width: 100%; background: #020617; height: 20px; border-radius: 4px; margin: 4px 0; overflow: hidden; position: relative; border: 1px solid #475569; }
-        .g-bar { height: 100%; transition: width 0.3s; }
-        .g-txt { position: absolute; width: 100%; top: 0; text-align: center; font-size: 10px; line-height: 20px; font-weight: 900; text-shadow: 1px 1px 1px #000; z-index: 5; }
-        .tabs { display: flex; gap: 4px; }
-        .tab { flex: 1; padding: 10px 2px; border: none; background: #334155; color: #94a3b8; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
-        .tab.active { background: var(--primary); color: white; }
-        .tab-content { display: none; flex: 1; overflow: hidden; flex-direction: column; gap: 8px; }
-        .tab-content.active { display: flex; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #0284c7; }
-        .btn-main:active { transform: translateY(2px); box-shadow: 0 2px 0 #0284c7; }
-        .log { flex: 1; overflow-y: auto; background: #020617; border-radius: 8px; padding: 8px; font-size: 11px; line-height: 1.5; border: 1px solid #334155; }
-        .scroll-view { flex: 1; overflow-y: auto; }
-        .node { padding: 8px; background: #0f172a; border-radius: 6px; border: 1px solid #334155; margin-bottom: 4px; }
-        .node.owned { border-color: var(--accent); background: #1e293b; }
-        .stat-row { display: flex; justify-content: space-between; padding: 6px; background: #0f172a; border-radius: 4px; margin-bottom: 2px; }
-        .btn-reset { width: 100%; padding: 8px; background: #450a0a; color: #f87171; border: 1px solid #991b1b; border-radius: 4px; margin-top: 10px; cursor: pointer; }
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-color: #2a2a2a;
+            --text-color: #ffffff;
+            --accent-color: #ffd700;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #game-container {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #444;
+            padding: 10px;
+            background: #000;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+            color: var(--accent-color);
+        }
+        .party-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin: 15px 0;
+        }
+        .unit-card {
+            font-size: 10px;
+            text-align: center;
+            background: var(--panel-color);
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .hp-bar-bg {
+            background: #444;
+            height: 4px;
+            width: 100%;
+            margin-top: 3px;
+        }
+        .hp-bar-fill {
+            background: #00ff00;
+            height: 100%;
+            transition: width 0.3s;
+        }
+        #battle-log {
+            height: 200px;
+            overflow-y: auto;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            padding: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #ccc;
+        }
+        .log-hit { color: #fff; font-weight: bold; }
+        .log-kill { color: var(--accent-color); }
+        .controls {
+            margin-top: 15px;
+            text-align: center;
+        }
+        button {
+            background: var(--accent-color);
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:disabled { background: #666; }
     </style>
 </head>
 <body>
 
-<div id="start-screen" style="position:fixed; inset:0; background:var(--bg); z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
-    <h1 style="color:var(--primary); font-size: 32px;">SKILL MASTER</h1>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:300px;">
-        <button class="tab active" onclick="gameInit('Warrior')">戦士</button>
-        <button class="tab active" onclick="gameInit('Mage')">魔術師</button>
-        <button class="tab active" onclick="gameInit('Thief')">盗賊</button>
-        <button class="tab active" onclick="gameInit('Cleric')">聖職者</button>
-    </div>
-</div>
-
-<div id="game-layout" style="display:none;">
-    <div class="card">
-        <div style="display:flex; justify-content:space-between; font-weight:bold;">
-            <span id="job-name" style="color:var(--primary);">---</span>
-            <span id="lv-disp" style="color:var(--accent);">Lv.1 / 1F</span>
-        </div>
-        <div class="g-wrap"><div id="hp-bar" class="g-bar" style="background:var(--hp);"></div><div id="hp-txt" class="g-txt"></div></div>
-        <div class="g-wrap"><div id="mp-bar" class="g-bar" style="background:var(--mp);"></div><div id="mp-txt" class="g-txt"></div></div>
-        <div class="g-wrap"><div id="exp-bar" class="g-bar" style="background:var(--exp);"></div><div id="exp-txt" class="g-txt"></div></div>
+<div id="game-container">
+    <div class="header">
+        <div id="dist">0m</div>
+        <div id="quest-name">始まりの草原</div>
+        <div id="drops">アイテム: 0</div>
     </div>
 
-    <div class="tabs">
-        <button class="tab active" onclick="showTab('btl', this)">戦闘</button>
-        <button class="tab" onclick="showTab('stat', this)">能力</button>
-        <button class="tab" onclick="showTab('skl', this)">スキル</button>
-    </div>
+    <div class="party-container" id="party-ui"></div>
 
-    <div id="v-btl" class="tab-content active">
-        <div class="card" style="border-color:var(--danger);">
-            <div style="display:flex; justify-content:space-between; font-size:12px;">
-                <span id="e-name" style="color:var(--danger); font-weight:bold;">索敵中...</span>
-                <span id="turn-disp"></span>
-            </div>
-            <div class="g-wrap"><div id="e-hp-bar" class="g-bar" style="background:var(--danger);"></div><div id="e-hp-txt" class="g-txt"></div></div>
-        </div>
-        <button class="btn-main" onclick="tick()">探索 / 攻撃</button>
-        <div class="log" id="log"></div>
-    </div>
+    <div id="battle-log"></div>
 
-    <div id="v-stat" class="tab-content">
-        <div class="scroll-view">
-            <div id="stats-list"></div>
-            <button class="btn-reset" onclick="confirmReset()">全データ初期化</button>
-        </div>
-    </div>
-
-    <div id="v-skl" class="tab-content">
-        <div class="scroll-view" id="skill-list"></div>
+    <div class="controls">
+        <button id="btn-start" onclick="game.startQuest()">クエスト開始</button>
     </div>
 </div>
 
 <script>
-const JOBS = {
-    "Warrior": { name: "戦士", bonus: {atk:1.2, def:1.2, hp:1.5, mp:0.5} },
-    "Mage": { name: "魔術師", bonus: {atk:0.7, def:0.7, hp:0.8, mp:2.5} },
-    "Thief": { name: "盗賊", bonus: {atk:1.1, def:0.8, hp:1.0, mp:1.0} },
-    "Cleric": { name: "聖職者", bonus: {atk:0.95, def:1.4, hp:1.3, mp:1.8} }
+/**
+ * Chalice Knights Core Engine
+ * ガイドライン遵守：NaN防止、乗算統一、最大5人編成
+ */
+
+const DB = {
+    units: [
+        { name: "ベアトリクス", hp: 2631, atk: 125, skill: "聖なる祈り", mult: 1.5 },
+        { name: "クローディア", hp: 2984, atk: 152, skill: "華麗なる一閃", mult: 1.8 },
+        { name: "ドゥーガルド", hp: 2362, atk: 185, skill: "大賢者の裁き", mult: 2.2 },
+        { name: "カルロス", hp: 2323, atk: 210, skill: "渾身の一撃", mult: 2.5 },
+        { name: "ユーリ", hp: 2100, atk: 190, skill: "影縫い", mult: 2.0 }
+    ],
+    enemies: [
+        { name: "マンドラゴラ", lv: 19, hp: 1500 },
+        { name: "スケルトン", lv: 22, hp: 2000 },
+        { name: "ゴーレム", lv: 25, hp: 5000 }
+    ]
 };
 
-// --- SKILL DATABASE 200 ---
-const SKILL_DB = [];
-const PRE = ["破滅","流麗","古道","聖域","深淵","猛攻","静寂","黄金","暗黒","烈火"];
-const SUF_A = ["強撃","三連斬","波動","叫び","盾陣","閃光","円舞","楔打ち","裁き","祈祷"];
-const SUF_P = ["闘志","加護","迅速","叡智","底力","律動","真髄","透視","吸収","執念"];
-
-for(let i=1; i<=200; i++) {
-    const isAct = i <= 120;
-    const name = isAct ? `${PRE[i%10]}${SUF_A[Math.floor(i/10)%10]}${i}` : `${PRE[i%10]}${SUF_P[Math.floor(i/10)%10]}・心${i}`;
-    let unlockText = isAct ? `累計撃破数 ${i*2}` : `累計被ダメージ ${i*100}`;
-    
-    SKILL_DB.push({
-        id: i, name, type: isAct ? "Active" : "Passive",
-        unlock: unlockText,
-        req: isAct ? {k: i*2} : {d: i*100},
-        mp: isAct ? 5 + Math.floor(i/10) : 0,
-        rate: isAct ? 10 + (i%15) : 0,
-        desc: isAct ? `威力 ${1.5+(i*0.02)}倍の特殊攻撃。` : `常時ステータスを ${i} 加算。`,
-        effect: (p, e, ctx) => {
-            if(isAct) {
-                let mul = 1.5 + (i*0.02);
-                if (i%5===0 && ctx.turn % 2 === 0) mul *= 1.5; // 特定ターン強化
-                return Math.floor(ctx.baseD * mul);
-            }
-            return 0;
-        }
-    });
-}
-
-let p = { job: "Warrior", lv: 1, exp: 0, f: 1, prg: 0, k: 0, td: 0, hp: 0, mp: 0, turn: 0, base: { hp: 300, mp: 100, atk: 40, def: 30, spd: 20 }, skills: [1] };
-let enemy = null;
-
-function getStats() {
-    const j = JOBS[p.job];
-    let s = { mH: Math.floor(p.base.hp * j.bonus.hp), mM: Math.floor(p.base.mp * j.bonus.mp), atk: Math.floor(p.base.atk * j.bonus.atk), def: Math.floor(p.base.def * j.bonus.def), spd: p.base.spd };
-    // Apply Passives (121-200)
-    p.skills.forEach(sid => {
-        if(sid >= 121) {
-            s.atk += Math.floor(sid/20); s.def += Math.floor(sid/30); s.mH += sid;
-        }
-    });
-    return s;
-}
-
-function gameInit(job) { p.job = job; const s = getStats(); p.hp = s.mH; p.mp = s.mM; save(); location.reload(); }
-function save() { localStorage.setItem('SKILL_MASTER_V150', JSON.stringify(p)); }
-function load() { const d = localStorage.getItem('SKILL_MASTER_V150'); if(d){ p = JSON.parse(d); refresh(); return true; } return false; }
-function confirmReset() { if(confirm("全データを消去しますか？")){ localStorage.removeItem('SKILL_MASTER_V150'); location.reload(); } }
-
-function tick() {
-    const s = getStats();
-    if (!enemy) {
-        const isB = (p.prg >= 5);
-        const m = 1 + (p.f * 0.25);
-        enemy = { n: isB ? `【${p.f}F 守護者】` : `下級魔兵`, hp: Math.floor((isB?1500:250)*m), mH: Math.floor((isB?1500:250)*m), atk: Math.floor((isB?110:55)*m), def: Math.floor((isB?65:28)*m), exp: Math.floor(100*m), isB };
-        p.turn = 1; log(`🔎 ${enemy.n}が出現。`, "var(--primary)"); refresh(); return;
+class Game {
+    constructor() {
+        this.distance = 0;
+        this.dropCount = 0;
+        this.party = DB.units.map(u => ({ ...u, curHp: u.hp }));
+        this.initUI();
     }
 
-    // Player Phase
-    let baseD = Math.max(Math.floor(p.lv * 2), s.atk - enemy.def);
-    let finalD = baseD;
-    p.skills.forEach(sid => {
-        const sk = SKILL_DB[sid-1];
-        if (sk.type === "Active" && p.mp >= sk.mp && Math.random()*100 < sk.rate) {
-            let sd = sk.effect(p, enemy, {baseD, turn: p.turn});
-            p.mp -= sk.mp; finalD += sd;
-            log(`⚡ ${sk.name}！ +${sd}ダメ`, "var(--accent)");
-        }
-    });
-    enemy.hp -= finalD;
-    log(`T-${p.turn} ⚔️ 攻撃：${finalD}のダメージ`, "#fff");
-
-    if (enemy.hp <= 0) {
-        log(`✅ 撃破！ ${enemy.exp}EXP獲得。`, "var(--hp)");
-        p.k++; p.exp += enemy.exp;
-        if(enemy.isB){ p.f++; p.prg=0; } else { p.prg++; }
-        if(p.exp >= p.lv*200){ p.lv++; p.exp=0; p.base.hp+=50; p.base.atk+=8; log("🌟 レベルアップ！"); }
-        checkSkills(); enemy = null; save(); refresh(); return;
-    }
-
-    // Enemy Phase
-    let ed = Math.max(1, enemy.atk - s.def);
-    p.hp -= ed; p.td += ed;
-    log(`💥 反撃：${ed}のダメージ受ける`, "var(--danger)");
-
-    if (p.hp <= 0) {
-        log("☠️ 敗北... 階層を戻り態勢を立て直す。", "var(--danger)");
-        p.f = Math.max(1, p.f - 1); p.prg = 0;
-        const sr = getStats(); p.hp = sr.mH; p.mp = sr.mM;
-        enemy = null; save();
-    }
-    p.turn++; refresh();
-}
-
-function checkSkills() {
-    SKILL_DB.forEach(sk => {
-        if (!p.skills.includes(sk.id)) {
-            if ((sk.req.k && p.k >= sk.req.k) || (sk.req.d && p.td >= sk.req.d)) {
-                p.skills.push(sk.id);
-                log(`📜 スキル【${sk.name}】習得！`, "var(--accent)");
-            }
-        }
-    });
-}
-
-function showTab(id, el) {
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('v-'+id).classList.add('active'); el.classList.add('active');
-    if(id==='stat') renderStats(); if(id==='skl') renderSkills();
-}
-
-function renderStats() {
-    const s = getStats();
-    document.getElementById('stats-list').innerHTML = [
-        {l:"ATK", v:s.atk}, {l:"DEF", v:s.def}, {l:"SPD", v:s.spd}, {l:"KILLS", v:p.k}, {l:"累計被弾", v:p.td}
-    ].map(d => `<div class="stat-row"><span>${d.l}</span><b>${d.v}</b></div>`).join('');
-}
-
-function renderSkills() {
-    const list = document.getElementById('skill-list');
-    list.innerHTML = SKILL_DB.map(sk => {
-        const has = p.skills.includes(sk.id);
-        return `<div class="node ${has?'owned':''}">
-            <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                <span style="color:${has?'var(--accent)':'#64748b'}">${sk.name}</span>
-                <span style="font-size:9px;">${sk.type}</span>
+    initUI() {
+        const container = document.getElementById('party-ui');
+        container.innerHTML = this.party.map((u, i) => `
+            <div class="unit-card">
+                <div>${u.name}</div>
+                <div class="hp-bar-bg"><div id="hp-${i}" class="hp-bar-fill" style="width:100%"></div></div>
+                <div style="font-size:8px">${u.curHp}</div>
             </div>
-            <div style="font-size:10px; color:#94a3b8;">${sk.desc}</div>
-            <div style="font-size:9px; color:${has?'var(--hp)':'#ef4444'};">条件: ${sk.unlock}</div>
-        </div>`;
-    }).join('');
-}
-
-function refresh() {
-    const s = getStats();
-    document.getElementById('job-name').innerText = JOBS[p.job].name;
-    document.getElementById('lv-disp').innerText = `Lv.${p.lv} / ${p.f}F (${p.prg}/5)`;
-    const updateBar = (id, cur, max, label) => {
-        document.getElementById(id+'-bar').style.width = Math.max(0, Math.min(100, (cur/max)*100)) + '%';
-        document.getElementById(id+'-txt').innerText = `${label} ${Math.floor(cur)}/${max}`;
-    };
-    updateBar('hp', p.hp, s.mH, 'HP'); updateBar('mp', p.mp, s.mM, 'MP'); updateBar('exp', p.exp, p.lv*200, 'EXP');
-    if (enemy) {
-        document.getElementById('e-name').innerText = enemy.n;
-        document.getElementById('turn-disp').innerText = `${p.turn}T`;
-        updateBar('e-hp', enemy.hp, enemy.mH, '敵HP');
-    } else {
-        document.getElementById('e-name').innerText = "索敵中..."; document.getElementById('turn-disp').innerText = "";
-        document.getElementById('e-hp-bar').style.width = "0%"; document.getElementById('e-hp-txt').innerText = "";
+        `).join('');
     }
+
+    log(msg, type = '') {
+        const logBox = document.getElementById('battle-log');
+        const div = document.createElement('div');
+        div.className = type;
+        div.innerText = msg;
+        logBox.appendChild(div);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    async startQuest() {
+        document.getElementById('btn-start').disabled = true;
+        this.log("--- 冒険に出発しました ---");
+
+        for (let i = 0; i < 3; i++) {
+            await this.sleep(1000);
+            this.distance += 10;
+            document.getElementById('dist').innerText = `${this.distance}m`;
+            
+            const enemy = { ...DB.enemies[i] };
+            this.log(`【${this.distance}m】LV${enemy.lv} ${enemy.name}が現れた！`);
+            await this.battle(enemy);
+        }
+
+        this.log("--- クエストクリア！ ---", "log-kill");
+        document.getElementById('btn-start').disabled = false;
+    }
+
+    async battle(enemy) {
+        let turn = 0;
+        while (enemy.hp > 0 && turn < 20) {
+            const actor = this.party[turn % 5];
+            const dmg = Math.floor(actor.atk * actor.mult); // 倍率は乗算統一
+            
+            await this.sleep(500);
+            enemy.hp -= dmg;
+            this.log(`${actor.name}の【${actor.skill}】が決まった！`, "log-hit");
+            this.log(`LV${enemy.lv} ${enemy.name}に ${dmg} のダメージ！`);
+
+            if (enemy.hp <= 0) {
+                this.log(`LV${enemy.lv} ${enemy.name}を倒した！`, "log-kill");
+                this.dropCount++;
+                document.getElementById('drops').innerText = `アイテム: ${this.dropCount}`;
+                break;
+            }
+            turn++;
+        }
+    }
+
+    sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
 }
 
-function log(m, c) {
-    const w = document.getElementById('log');
-    w.innerHTML += `<div><span style="color:${c||'#f8fafc'}">${m}</span></div>`;
-    w.scrollTop = w.scrollHeight;
-    if(w.childNodes.length > 30) w.removeChild(w.firstChild);
-}
-
-window.onload = () => { if(load()){ document.getElementById('start-screen').style.display='none'; document.getElementById('game-layout').style.display='flex'; } };
+const game = new Game();
 </script>
+
 </body>
 </html>

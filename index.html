@@ -1,832 +1,215 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>深淵の騎士団</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0a0a14;--bg2:#12121e;--bg3:#1a1a2c;
-  --border:#2a2a44;--border2:#3d3d60;
-  --gold:#c9a227;--gold-dim:#7a621a;
-  --steel:#5a80a0;--text:#e0d8c8;--text-dim:#7a6e60;
-  --red:#c04040;--green:#3d7a3d;--purple:#7040a0;
-  --fire:#e05030;--water:#3070c0;--wind:#50b060;
-  --earth:#b09030;--light:#d0c040;--dark:#8030c0;--none:#607080;
-}
-html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Crimson Text',Georgia,serif;font-size:16px;overflow:hidden}
-#app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto}
-
-/* HEADER */
-header{background:linear-gradient(180deg,#0d0d20 0%,#12121e 100%);border-bottom:1px solid var(--border2);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.hdr-title{font-family:'Cinzel',serif;font-size:13px;color:var(--gold);letter-spacing:.1em}
-.hdr-res{display:flex;gap:14px;align-items:center}
-.res{display:flex;align-items:center;gap:4px;font-size:14px}
-.res-val{font-family:'Cinzel',serif;color:var(--gold)}
-
-/* MAIN */
-main{flex:1;overflow:hidden;position:relative}
-.view{display:none;height:100%;overflow-y:auto;padding:10px}
-.view.active{display:block}
-
-/* NAV */
-nav{background:var(--bg2);border-top:1px solid var(--border2);display:flex;flex-shrink:0}
-.nav-btn{flex:1;background:none;border:none;color:var(--text-dim);padding:9px 4px 7px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;font-family:'Cinzel',serif;letter-spacing:.04em;transition:color .2s}
-.nav-btn .ni{font-size:18px}
-.nav-btn.active{color:var(--gold)}
-
-/* PANELS */
-.panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px}
-.ptitle{font-family:'Cinzel',serif;font-size:12px;color:var(--gold);letter-spacing:.1em;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:5px}
-
-/* STAGE BAR */
-.stage-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
-.stage-name{font-family:'Cinzel',serif;font-size:14px}
-.stage-desc{font-size:11px;color:var(--text-dim);margin-top:2px}
-.stage-sel-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--steel);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;white-space:nowrap}
-.dist-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:3px;height:16px;position:relative;overflow:hidden}
-.dist-bar{background:linear-gradient(90deg,var(--steel) 0%,#7ab0d0 100%);height:100%;transition:width .5s linear}
-.dist-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text);font-family:'Cinzel',serif}
-
-/* BATTLE AREA */
-.battle-area{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:8px;position:relative}
-.exploring{color:var(--text-dim);font-style:italic;font-size:13px;animation:pulse 2s infinite;text-align:center}
-@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
-.enemy-disp{text-align:center}
-.enemy-em{font-size:44px;line-height:1;margin-bottom:5px}
-.enemy-nm{font-family:'Cinzel',serif;font-size:13px;margin-bottom:5px}
-.ehp-wrap{width:180px;background:#1a0a0a;border:1px solid var(--border);height:9px;border-radius:3px;overflow:hidden;margin:0 auto}
-.ehp-bar{background:linear-gradient(90deg,#a03030 0%,#e04040 100%);height:100%;transition:width .3s}
-.ehp-txt{font-size:10px;color:var(--text-dim);margin-top:2px}
-.enc-overlay{position:absolute;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;border-radius:6px;z-index:10}
-.enc-dlg{background:var(--bg2);border:1px solid var(--gold-dim);border-radius:8px;padding:18px;text-align:center;width:210px}
-.enc-dlg h3{font-family:'Cinzel',serif;color:var(--gold);margin-bottom:6px;font-size:13px}
-.enc-dlg p{color:var(--text-dim);font-size:12px;margin-bottom:12px}
-.enc-btns{display:flex;gap:6px;justify-content:center}
-
-/* BATTLE LOG */
-.blog{background:#08080f;border:1px solid var(--border);border-radius:4px;height:90px;overflow-y:auto;padding:5px 8px;margin-bottom:8px;font-size:11px;line-height:1.6}
-.ll{animation:fi .2s ease}
-@keyframes fi{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
-.ll.skill{color:#d4a853;font-style:italic}
-.ll.damage{color:#c07050}
-.ll.heal{color:#50c070}
-.ll.death{color:#a03030;font-weight:bold}
-.ll.system{color:var(--steel)}
-.ll.level{color:#d4c050;font-weight:bold}
-
-/* PARTY DISPLAY */
-.party-disp{display:flex;gap:5px;margin-bottom:8px;justify-content:center}
-.pm{flex:1;max-width:76px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 3px;text-align:center;position:relative}
-.pm.dead{opacity:.4}
-.pm-em{font-size:22px;line-height:1}
-.pm-nm{font-size:9px;color:var(--text-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pm-hp-wrap{background:#1a0a0a;border-radius:2px;height:4px;margin-top:3px;overflow:hidden}
-.pm-hp{background:var(--green);height:100%;transition:width .3s}
-.pm-hp.low{background:#c09030}
-.pm-hp.crit{background:var(--red)}
-
-/* CONTROLS */
-.ctrls{display:flex;gap:6px;align-items:center}
-.btn{border:none;border-radius:5px;padding:9px 14px;cursor:pointer;font-family:'Cinzel',serif;font-size:12px;letter-spacing:.04em;transition:all .15s}
-.btn:active{transform:scale(.97)}
-.btn-pri{background:linear-gradient(180deg,#1e3050 0%,#142040 100%);border:1px solid var(--steel);color:#8ab8d8}
-.btn-gold{background:linear-gradient(180deg,#302010 0%,#1a1008 100%);border:1px solid var(--gold-dim);color:var(--gold);position:relative;flex-shrink:0}
-.btn-danger{background:linear-gradient(180deg,#301010 0%,#1a0808 100%);border:1px solid #603030;color:#c06060}
-.medal-cnt{position:absolute;top:-4px;right:-4px;background:var(--red);color:white;border-radius:50%;width:17px;height:17px;font-size:9px;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif}
-.toggle-wrap{flex:1;display:flex;gap:3px}
-.tog{flex:1;padding:7px;border-radius:4px;border:1px solid var(--border2);background:var(--bg3);color:var(--text-dim);cursor:pointer;font-size:10px;font-family:'Cinzel',serif;transition:all .2s}
-.tog.active{background:linear-gradient(180deg,#1e3050 0%,#142040 100%);border-color:var(--steel);color:var(--text)}
-
-/* CHARACTER VIEW */
-.char-grid{display:flex;flex-direction:column;gap:7px}
-.char-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:border-color .2s;position:relative}
-.char-card:hover{border-color:var(--border2)}
-.char-card.in-party{border-color:var(--gold-dim)}
-.char-card.locked{opacity:.5}
-.ch-av{font-size:36px;line-height:1;flex-shrink:0}
-.ch-det{flex:1}
-.ch-nmrow{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
-.ch-nm{font-family:'Cinzel',serif;font-size:14px}
-.ch-cls{font-size:10px;color:var(--text-dim);background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:3px}
-.ab{font-size:10px;padding:1px 5px;border-radius:3px;color:white}
-.ab.fire{background:var(--fire)}.ab.water{background:var(--water)}.ab.wind{background:var(--wind);color:#001000}.ab.earth{background:var(--earth);color:#100800}.ab.light{background:var(--light);color:#100e00}.ab.dark{background:var(--dark)}.ab.none{background:var(--none)}
-.ch-lv{font-size:11px;color:var(--gold);margin-bottom:4px}
-.ch-stats{display:flex;gap:8px;flex-wrap:wrap}
-.st{font-size:10px;color:var(--text-dim)}
-.st span{color:var(--text)}
-.ch-skill{margin-top:5px;font-size:10px;color:var(--text-dim);font-style:italic}
-.ch-skill strong{color:var(--gold-dim)}
-.party-badge{position:absolute;top:7px;right:7px;background:var(--gold-dim);color:#0a0800;font-size:9px;padding:1px 5px;border-radius:3px;font-family:'Cinzel',serif}
-.exp-wrap{background:var(--bg3);border-radius:2px;height:3px;margin-top:5px;overflow:hidden}
-.exp-bar{background:linear-gradient(90deg,#4060a0 0%,#6080c0 100%);height:100%;transition:width .5s}
-
-/* OVERLAYS */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:100}
-.overlay.bottom{align-items:flex-end}
-.sheet{background:var(--bg2);border-top:1px solid var(--border2);border-radius:12px 12px 0 0;padding:14px;width:100%;max-height:70vh;overflow-y:auto}
-.dlg{background:var(--bg2);border:1px solid var(--gold-dim);border-radius:8px;padding:14px;width:290px;max-height:80vh;overflow-y:auto}
-.dlg h3{font-family:'Cinzel',serif;color:var(--gold);margin-bottom:10px;text-align:center;font-size:14px}
-.ovl-title{font-family:'Cinzel',serif;color:var(--gold);margin-bottom:10px;text-align:center;font-size:13px;border-bottom:1px solid var(--border);padding-bottom:6px}
-.mc-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
-.mc-item{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:7px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:border-color .2s}
-.mc-item:hover{border-color:var(--gold-dim)}
-.mc-item.dead{opacity:.4;cursor:not-allowed}
-.mc-em{font-size:22px}
-.mc-inf{flex:1}
-.mc-nm{font-family:'Cinzel',serif;font-size:12px}
-.mc-hp{font-size:10px;color:var(--text-dim)}
-.cancel-btn{width:100%;text-align:center;background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);padding:7px;cursor:pointer;font-family:'Crimson Text',serif;font-size:13px}
-.stage-item{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:10px;margin-bottom:7px;cursor:pointer;transition:border-color .2s}
-.stage-item:hover{border-color:var(--border2)}
-.stage-item.active{border-color:var(--gold-dim)}
-.stage-item.locked{opacity:.4;cursor:not-allowed}
-.si-nm{font-family:'Cinzel',serif;font-size:13px;margin-bottom:3px}
-.si-desc{font-size:11px;color:var(--text-dim)}
-
-/* INVENTORY */
-.inv-row{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:pointer}
-.inv-row:hover{border-color:var(--border2)}
-.inv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
-.inv-cell{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:7px;text-align:center}
-
-::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.hidden{display:none!important}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BABEL: THE ASCENSION</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --panel-color: #1a1a1a;
+            --accent-color: #ffd700;
+            --text-color: #e0e0e0;
+            --hp-color: #ff4d4d;
+            --dex-color: #4da6ff;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #game-layout {
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+            background: var(--panel-color);
+            display: grid;
+            grid-template-rows: 50px 1fr 120px 150px;
+        }
+        header {
+            background: #222;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 2px solid var(--accent-color);
+            font-weight: bold;
+        }
+        #party-view {
+            overflow-y: auto;
+            padding: 10px;
+            border-bottom: 1px solid #333;
+        }
+        #battle-view {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #111;
+        }
+        #log-window {
+            background: #000;
+            padding: 10px;
+            overflow-y: auto;
+            color: #00ff00;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        .unit-slot {
+            background: #252525;
+            margin-bottom: 5px;
+            padding: 6px;
+            border-left: 3px solid var(--dex-color);
+            font-size: 13px;
+        }
+        .bar-container {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            margin-top: 4px;
+        }
+        .hp-fill { height: 100%; background: var(--hp-color); transition: width 0.2s; }
+        .enemy-box {
+            width: 80%;
+            padding: 15px;
+            border: 2px solid #800;
+            background: #200;
+            text-align: center;
+        }
+        .btn-start {
+            margin-top: 10px;
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-<div id="app">
-  <header>
-    <div class="hdr-title">⚔ 深淵の騎士団</div>
-    <div class="hdr-res">
-      <div class="res">🪙 <span class="res-val" id="hdr-gold">100</span></div>
-      <div class="res">🏅 <span class="res-val" id="hdr-medals">3</span></div>
-    </div>
-  </header>
 
-  <main>
-    <!-- DUNGEON -->
-    <div id="view-dungeon" class="view active">
-      <div class="panel">
-        <div class="stage-row">
-          <div>
-            <div class="stage-name" id="stage-name">始まりの草原</div>
-            <div class="stage-desc" id="stage-desc">穏やかな草原。初めての冒険の場所。</div>
-          </div>
-          <button class="stage-sel-btn" onclick="openStageOvl()">▼ ステージ</button>
-        </div>
-        <div class="dist-wrap">
-          <div class="dist-bar" id="dist-bar" style="width:0%"></div>
-          <div class="dist-label" id="dist-label">0m / 500m</div>
-        </div>
-      </div>
+<div id="game-layout">
+    <header>
+        <div style="color:var(--accent-color)">BABEL</div>
+        <div id="floor-tag">FLOOR: 1/100</div>
+    </header>
 
-      <div class="battle-area" id="battle-area">
-        <div class="exploring" id="exp-txt">「出発」を押してダンジョンへ</div>
-        <div class="enemy-disp hidden" id="enemy-disp">
-          <div class="enemy-em" id="enemy-em">👾</div>
-          <div class="enemy-nm" id="enemy-nm">スライム Lv.1</div>
-          <div class="ehp-wrap"><div class="ehp-bar" id="ehp-bar" style="width:100%"></div></div>
-          <div class="ehp-txt" id="ehp-txt">HP: 60 / 60</div>
-        </div>
-        <div class="enc-overlay hidden" id="enc-ovl">
-          <div class="enc-dlg">
-            <h3 id="enc-title">⚠ 敵が現れた！</h3>
-            <p id="enc-desc"></p>
-            <div class="enc-btns">
-              <button class="btn btn-danger" onclick="fightEnc()">⚔ 戦う</button>
-              <button class="btn btn-pri" onclick="fleeEnc()">💨 逃げる</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="blog" id="blog"><div class="ll system">冒険を開始してください。</div></div>
-      <div class="party-disp" id="party-disp"></div>
-
-      <div class="ctrls">
-        <div class="toggle-wrap">
-          <button class="tog active" id="btn-auto" onclick="setMode('auto')">⚙ AUTO</button>
-          <button class="tog" id="btn-manual" onclick="setMode('manual')">✋ 手動</button>
-        </div>
-        <button class="btn btn-gold" onclick="openMedalOvl()" style="padding:9px 12px;">
-          🏅<span class="medal-cnt" id="medal-cnt">3</span>
-        </button>
-        <button class="btn btn-pri" id="start-btn" onclick="toggleDungeon()">▶ 出発</button>
-      </div>
+    <div id="party-view">
+        <div id="party-list"></div>
     </div>
 
-    <!-- CHARS -->
-    <div id="view-chars" class="view">
-      <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:6px;">⚔ キャラクター</div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">タップでパーティ追加/除外（最大5人）</div>
-      <div class="char-grid" id="char-grid"></div>
+    <div id="battle-view">
+        <div id="enemy-target">待機中...</div>
+        <button class="btn-start" id="start-btn">EXPLORATION START</button>
     </div>
 
-    <!-- EQUIP -->
-    <div id="view-equip" class="view">
-      <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:8px;">🗡 装備・アイテム</div>
-      <div id="inv-list"><div style="color:var(--text-dim);font-size:12px;text-align:center;padding:30px;">アイテムなし。ダンジョンで敵を倒して集めましょう！</div></div>
-    </div>
-  </main>
-
-  <nav>
-    <button class="nav-btn active" id="nav-dungeon" onclick="switchView('dungeon')"><span class="ni">⚔</span>ダンジョン</button>
-    <button class="nav-btn" id="nav-chars" onclick="switchView('chars')"><span class="ni">👥</span>キャラ</button>
-    <button class="nav-btn" id="nav-equip" onclick="switchView('equip')"><span class="ni">🗡</span>装備</button>
-  </nav>
-</div>
-
-<!-- Medal overlay -->
-<div class="overlay hidden" id="medal-ovl">
-  <div class="dlg">
-    <h3>🏅 勲章を使う</h3>
-    <div class="mc-list" id="mc-list"></div>
-    <button class="cancel-btn" onclick="closeMedalOvl()">キャンセル</button>
-  </div>
-</div>
-
-<!-- Stage overlay -->
-<div class="overlay bottom hidden" id="stage-ovl">
-  <div class="sheet">
-    <div class="ovl-title">⚔ ステージ選択</div>
-    <div id="stage-list"></div>
-    <button class="cancel-btn" onclick="closeStageOvl()" style="margin-top:6px;">キャンセル</button>
-  </div>
+    <div id="log-window"></div>
 </div>
 
 <script>
-// ── ATTRIBUTE CHART ──────────────────────────────────────
-const ACHART = {fire:{wind:1.5,water:.7},water:{fire:1.5,earth:.7},wind:{earth:1.5,fire:.7},earth:{water:1.5,wind:.7},light:{dark:1.5},dark:{light:1.5}};
-const ANAMES = {fire:'火',water:'水',wind:'風',earth:'土',light:'光',dark:'闇',none:'無'};
-function attrMult(a,d){return(ACHART[a]||{})[d]||1}
-
-// ── CHARACTER DEFINITIONS ─────────────────────────────────
-const CDEFS = [
-  {id:'yuri',name:'ユーリ',cls:'剣士',attr:'light',em:'⚔',unlockStage:-1,
-   base:{hp:350,atk:80,def:55,spd:95},gro:{hp:50,atk:9,def:6,spd:.3},
-   skill:{name:'光の剣閃',rate:.18,desc:'1.8倍ダメージの一撃',
-     exec(a,en){const t=en.find(e=>e.hp>0);if(!t)return null;const d=Math.floor(a.atk*1.8*attrMult(a.attr,t.attr));t.hp=Math.max(0,t.hp-d);return{type:'skill',text:`${a.name}の【光の剣閃】！${t.name}に ${d} ダメージ！`,target:t}}}},
-  {id:'beatrix',name:'ベアトリクス',cls:'聖女',attr:'light',em:'✨',unlockStage:0,
-   base:{hp:280,atk:55,def:45,spd:80},gro:{hp:40,atk:6,def:5,spd:.2},
-   skill:{name:'聖なる祈り',rate:.15,desc:'最もHPが低い味方を30%回復',
-     exec(a,en,al){const s=[...al].filter(x=>x.hp>0).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp);if(!s.length)return null;const t=s[0];const h=Math.floor(t.maxHp*.30);t.hp=Math.min(t.maxHp,t.hp+h);return{type:'heal',text:`${a.name}の【聖なる祈り】！${t.name}のHPが ${h} 回復！`,target:t}}}},
-  {id:'carlos',name:'カルロス',cls:'戦士',attr:'earth',em:'🛡',unlockStage:1,
-   base:{hp:500,atk:90,def:80,spd:60},gro:{hp:70,atk:10,def:9,spd:.2},
-   skill:{name:'大地の守護',rate:.20,desc:'2倍の力強い一撃',
-     exec(a,en){const t=en.find(e=>e.hp>0);if(!t)return null;const d=Math.floor(a.atk*2.0*attrMult(a.attr,t.attr));t.hp=Math.max(0,t.hp-d);return{type:'skill',text:`${a.name}の【大地の守護】！${t.name}に ${d} の重撃！`,target:t}}}},
-  {id:'claudia',name:'クローディア',cls:'弓使い',attr:'wind',em:'🏹',unlockStage:2,
-   base:{hp:240,atk:100,def:35,spd:110},gro:{hp:35,atk:11,def:4,spd:.3},
-   skill:{name:'連射',rate:.22,desc:'3連撃、各0.7倍ダメージ',
-     exec(a,en){const t=en.find(e=>e.hp>0);if(!t)return null;let tot=0;for(let i=0;i<3;i++){const d=Math.floor(a.atk*.7*attrMult(a.attr,t.attr));tot+=d;t.hp=Math.max(0,t.hp-d)}return{type:'skill',text:`${a.name}の【連射】！${t.name}に3連撃 計${tot}ダメージ！`,target:t}}}},
-  {id:'dougald',name:'ドゥーガルド',cls:'ウォーロック',attr:'dark',em:'🔮',unlockStage:3,
-   base:{hp:220,atk:120,def:40,spd:75},gro:{hp:30,atk:14,def:4,spd:.2},
-   skill:{name:'アシッドレイン',rate:.15,desc:'2倍ダメージ＋毒（3T）',
-     exec(a,en){const t=en.find(e=>e.hp>0);if(!t)return null;const d=Math.floor(a.atk*2.0*attrMult(a.attr,t.attr));t.hp=Math.max(0,t.hp-d);t.poisoned=3;t.defDebuff=.7;return{type:'skill',text:`${a.name}の【アシッドレイン】！${t.name}に ${d} ダメージ！毒状態に！`,target:t}}}},
+const KNIGHTS_DATA = [
+    { id: 1, name: "グラディウス", hp: 1500, atk: 120, def: 200, dex: 300 },
+    { id: 2, name: "ヴァレリア", hp: 900, atk: 180, def: 100, dex: 900 },
+    { id: 3, name: "バルド", hp: 1300, atk: 200, def: 150, dex: 400 },
+    { id: 4, name: "セレネ", hp: 1000, atk: 160, def: 110, dex: 800 },
+    { id: 10, name: "エリア", hp: 900, atk: 80, def: 120, dex: 500 },
+    { id: 12, name: "ミラ", hp: 1100, atk: 100, def: 140, dex: 450 },
+    { id: 20, name: "アベル", hp: 1200, atk: 220, def: 130, dex: 650 }
 ];
 
-// ── STAGE DEFINITIONS ─────────────────────────────────────
-const STAGES = [
-  {id:0,name:'始まりの草原',desc:'穏やかな草原。初めての冒険の場所。',em:'🌿',dist:500,enc:20,lvRange:[1,5],enemies:['slime','kobold','wolf'],boss:'goblin_king',unlockChar:'beatrix',medals:2},
-  {id:1,name:'深い森',desc:'鬱蒼とした森。ゴブリンの群れが潜む。',em:'🌲',dist:800,enc:25,lvRange:[6,12],enemies:['goblin','forest_wolf','dark_bat'],boss:'orc_shaman',unlockChar:'carlos',medals:3},
-  {id:2,name:'亡者の沼地',desc:'死の瘴気が漂う沼。アンデッドが彷徨う。',em:'💀',dist:1000,enc:30,lvRange:[13,20],enemies:['zombie','skeleton','ghost'],boss:'lich',unlockChar:'claudia',medals:4},
-  {id:3,name:'古の遺跡',desc:'古代文明の遺跡。石像が動き出す。',em:'🏛',dist:1200,enc:25,lvRange:[21,30],enemies:['stone_golem','mummy','cursed_knight'],boss:'ancient_guardian',unlockChar:'dougald',medals:5},
-  {id:4,name:'深淵の回廊',desc:'闇の奥深く。最強の悪魔が待ち受ける。',em:'🌑',dist:1500,enc:30,lvRange:[31,45],enemies:['werewolf','demon','dark_knight'],boss:'abyss_lord',unlockChar:null,medals:10},
-];
+let party = [];
+let enemy = null;
+let floor = 1;
+let isBattle = false;
 
-// ── ENEMY DEFINITIONS ─────────────────────────────────────
-const EDEFS = {
-  slime:{name:'スライム',attr:'water',em:'🟢',hm:0.8,am:0.7,dm:0.5,sm:0.4,exp:8,g:[3,10],drops:[{k:'slime_jelly',r:.3}]},
-  kobold:{name:'コボルト',attr:'earth',em:'🦎',hm:1.0,am:0.9,dm:0.8,sm:0.7,exp:12,g:[5,15],drops:[{k:'kobold_fang',r:.2}]},
-  wolf:{name:'野生の狼',attr:'wind',em:'🐺',hm:0.9,am:1.1,dm:0.6,sm:1.1,exp:15,g:[6,18],drops:[{k:'wolf_pelt',r:.25}]},
-  goblin_king:{name:'ゴブリン王',attr:'earth',em:'👑',hm:4,am:1.5,dm:1.2,sm:0.8,exp:80,g:[40,80],boss:true,drops:[{k:'iron_sword',r:.5},{k:'goblin_crown',r:.4}]},
-  goblin:{name:'ゴブリン',attr:'earth',em:'👺',hm:1.0,am:1.0,dm:0.7,sm:0.9,exp:25,g:[10,25],drops:[{k:'goblin_ear',r:.25}]},
-  forest_wolf:{name:'森の大狼',attr:'wind',em:'🐺',hm:1.2,am:1.3,dm:0.8,sm:1.2,exp:30,g:[12,28],drops:[{k:'wolf_pelt',r:.3}]},
-  dark_bat:{name:'闇コウモリ',attr:'dark',em:'🦇',hm:0.7,am:1.1,dm:0.5,sm:1.4,exp:28,g:[10,22],drops:[{k:'bat_wing',r:.3}]},
-  orc_shaman:{name:'オークシャーマン',attr:'fire',em:'🔥',hm:4.5,am:1.8,dm:1.3,sm:0.7,exp:200,g:[80,150],boss:true,drops:[{k:'shaman_staff',r:.5},{k:'orc_robe',r:.4}]},
-  zombie:{name:'ゾンビ',attr:'dark',em:'🧟',hm:1.5,am:1.0,dm:0.8,sm:0.4,exp:45,g:[15,35],drops:[{k:'rotten_bone',r:.4}]},
-  skeleton:{name:'スケルトン',attr:'dark',em:'💀',hm:0.9,am:1.2,dm:1.0,sm:0.8,exp:50,g:[18,38],drops:[{k:'bone_shard',r:.35}]},
-  ghost:{name:'ゴースト',attr:'dark',em:'👻',hm:0.8,am:1.3,dm:0.4,sm:1.3,exp:55,g:[20,40],drops:[{k:'spirit_orb',r:.2}]},
-  lich:{name:'リッチ',attr:'dark',em:'💜',hm:5,am:2.2,dm:1.5,sm:0.9,exp:500,g:[200,350],boss:true,drops:[{k:'lich_robe',r:.5},{k:'dark_tome',r:.4}]},
-  stone_golem:{name:'石像ゴーレム',attr:'earth',em:'🗿',hm:2.5,am:1.4,dm:2.0,sm:0.3,exp:80,g:[25,55],drops:[{k:'stone_core',r:.25}]},
-  mummy:{name:'ミイラ',attr:'none',em:'🧟',hm:1.5,am:1.5,dm:1.2,sm:0.6,exp:85,g:[28,58],drops:[{k:'ancient_wrap',r:.3}]},
-  cursed_knight:{name:'呪われた騎士',attr:'dark',em:'🖤',hm:1.8,am:1.8,dm:1.5,sm:0.9,exp:95,g:[32,65],drops:[{k:'cursed_blade',r:.2}]},
-  ancient_guardian:{name:'古代の守護者',attr:'earth',em:'⚡',hm:6,am:2.5,dm:2.0,sm:0.8,exp:1000,g:[400,600],boss:true,drops:[{k:'guardian_armor',r:.5},{k:'ancient_blade',r:.4}]},
-  werewolf:{name:'ウェアウルフ',attr:'wind',em:'🐺',hm:1.8,am:2.0,dm:1.3,sm:1.4,exp:140,g:[50,100],drops:[{k:'werewolf_claw',r:.3}]},
-  demon:{name:'デーモン',attr:'fire',em:'😈',hm:2.0,am:2.2,dm:1.5,sm:1.0,exp:160,g:[55,110],drops:[{k:'demon_horn',r:.25}]},
-  dark_knight:{name:'闇の騎士',attr:'dark',em:'🗡',hm:2.2,am:2.0,dm:2.0,sm:0.9,exp:175,g:[60,120],drops:[{k:'dark_armor',r:.2}]},
-  abyss_lord:{name:'深淵の主',attr:'dark',em:'🌑',hm:8,am:3.0,dm:2.5,sm:1.0,exp:3000,g:[800,1200],boss:true,drops:[{k:'abyss_crown',r:.6},{k:'void_blade',r:.5}]},
-};
-
-// ── ITEM DEFINITIONS ─────────────────────────────────────
-const IDEFS = {
-  slime_jelly:{name:'スライムゼリー',type:'mat',ic:'🟢',desc:'スライムのゼリー'},
-  kobold_fang:{name:'コボルトの牙',type:'mat',ic:'🦎',desc:'鋭い牙'},
-  wolf_pelt:{name:'狼の毛皮',type:'mat',ic:'🐺',desc:'上質な毛皮'},
-  goblin_ear:{name:'ゴブリンの耳',type:'mat',ic:'👺',desc:'臭い耳'},
-  bat_wing:{name:'コウモリの翼',type:'mat',ic:'🦇',desc:'闇の翼'},
-  rotten_bone:{name:'腐った骨',type:'mat',ic:'🦴',desc:'ゾンビの骨'},
-  bone_shard:{name:'骨の破片',type:'mat',ic:'💀',desc:'スケルトンの骨片'},
-  spirit_orb:{name:'霊魂の玉',type:'mat',ic:'⭕',desc:'霊体の結晶'},
-  stone_core:{name:'石の核',type:'mat',ic:'🔵',desc:'ゴーレムの核'},
-  ancient_wrap:{name:'古代の包帯',type:'mat',ic:'📜',desc:'呪われた包帯'},
-  werewolf_claw:{name:'ウェアウルフの爪',type:'mat',ic:'🐾',desc:'鋭い爪'},
-  demon_horn:{name:'デーモンの角',type:'mat',ic:'😈',desc:'魔の角'},
-  goblin_crown:{name:'ゴブリンの王冠',type:'weapon',ic:'👑',stats:{atk:15},desc:'小さな王の証'},
-  iron_sword:{name:'鉄の剣',type:'weapon',ic:'🗡',stats:{atk:20},desc:'丈夫な鉄の剣'},
-  shaman_staff:{name:'シャーマンの杖',type:'weapon',ic:'🪄',stats:{atk:35},desc:'魔力の込められた杖'},
-  orc_robe:{name:'オークのローブ',type:'armor',ic:'🧥',stats:{def:25},desc:'粗末なローブ'},
-  lich_robe:{name:'リッチのローブ',type:'armor',ic:'💜',stats:{def:40,atk:15},desc:'死の魔力が宿るローブ'},
-  dark_tome:{name:'闇の魔導書',type:'weapon',ic:'📕',stats:{atk:50},desc:'古代の禁術書'},
-  guardian_armor:{name:'守護者の鎧',type:'armor',ic:'🛡',stats:{def:60,hp:200},desc:'強固な古代の鎧'},
-  ancient_blade:{name:'古代の刃',type:'weapon',ic:'⚔',stats:{atk:65},desc:'古代の剣士の刃'},
-  cursed_blade:{name:'呪いの刃',type:'weapon',ic:'🖤',stats:{atk:45},desc:'呪われた漆黒の剣'},
-  dark_armor:{name:'闇の鎧',type:'armor',ic:'⚫',stats:{def:55},desc:'暗黒の力を宿す鎧'},
-  abyss_crown:{name:'深淵の冠',type:'weapon',ic:'🌑',stats:{atk:100,def:30},desc:'深淵の主の王冠'},
-  void_blade:{name:'虚無の刃',type:'weapon',ic:'🗡',stats:{atk:120},desc:'虚無の伝説の剣'},
-};
-
-// ── GAME STATE ────────────────────────────────────────────
-let G = {
-  gold:100, medals:3,
-  party:['yuri'],
-  chars:{},
-  inventory:[],
-  clearedStages:[],
-  unlockedStages:[0],
-  currentStage:0,
-  dun:{active:false,auto:true,dist:0,inBattle:false,pending:null,enemy:null},
-  kills:0,
-};
-
-function expNeeded(lv){return Math.floor(30*Math.pow(lv,1.5))}
-
-function makeChar(def,lv=1){
-  const hp=Math.floor(def.base.hp+def.gro.hp*(lv-1));
-  const atk=Math.floor(def.base.atk+def.gro.atk*(lv-1));
-  const defn=Math.floor(def.base.def+def.gro.def*(lv-1));
-  const spd=def.base.spd+def.gro.spd*(lv-1);
-  return{id:def.id,name:def.name,cls:def.cls,attr:def.attr,em:def.em,
-    level:lv,exp:0,expNext:expNeeded(lv),
-    hp,maxHp:hp,atk,baseAtk:atk,def:defn,baseDef:defn,spd,
-    charge:Math.random()*40,
-    unlocked:def.unlockStage===-1,
-    equipped:{},skill:def.skill};
+function addLog(m) {
+    const d = document.createElement('div');
+    d.innerHTML = `> ${m}`;
+    const log = document.getElementById('log-window');
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
 }
 
-function recalc(c){
-  const def=CDEFS.find(d=>d.id===c.id);
-  let atk=Math.floor(def.base.atk+def.gro.atk*(c.level-1));
-  let defn=Math.floor(def.base.def+def.gro.def*(c.level-1));
-  let hpB=0;
-  for(const slot of['weapon','armor']){
-    const it=c.equipped[slot];
-    if(it&&it.stats){atk+=(it.stats.atk||0);defn+=(it.stats.def||0);hpB+=(it.stats.hp||0)}
-  }
-  c.atk=atk;c.def=defn;
-  const base=Math.floor(def.base.hp+def.gro.hp*(c.level-1))+hpB;
-  const ratio=c.hp/c.maxHp;
-  c.maxHp=base;
-  c.hp=Math.min(c.maxHp,Math.floor(c.maxHp*ratio));
-}
-
-for(const d of CDEFS) G.chars[d.id]=makeChar(d,1);
-
-// ── SAVE / LOAD ───────────────────────────────────────────
-function save(){
-  try{
-    const s={gold:G.gold,medals:G.medals,party:G.party,clearedStages:G.clearedStages,
-      unlockedStages:G.unlockedStages,currentStage:G.currentStage,inventory:G.inventory,kills:G.kills,chars:{}};
-    for(const id in G.chars){
-      const c=G.chars[id];
-      s.chars[id]={level:c.level,exp:c.exp,expNext:c.expNext,hp:c.hp,maxHp:c.maxHp,unlocked:c.unlocked,equipped:c.equipped};
-    }
-    localStorage.setItem('dk_save',JSON.stringify(s));
-  }catch(e){}
-}
-
-function load(){
-  try{
-    const raw=localStorage.getItem('dk_save');if(!raw)return;
-    const s=JSON.parse(raw);
-    G.gold=s.gold||100;G.medals=s.medals??3;G.party=s.party||['yuri'];
-    G.clearedStages=s.clearedStages||[];G.unlockedStages=s.unlockedStages||[0];
-    G.currentStage=s.currentStage||0;G.inventory=s.inventory||[];G.kills=s.kills||0;
-    for(const id in s.chars||{}){
-      if(!G.chars[id])continue;
-      const cs=s.chars[id];
-      Object.assign(G.chars[id],{level:cs.level,exp:cs.exp,expNext:cs.expNext,
-        hp:cs.hp,maxHp:cs.maxHp,unlocked:cs.unlocked,equipped:cs.equipped||{}});
-      recalc(G.chars[id]);
-    }
-  }catch(e){}
-}
-
-// ── ENEMY BUILDER ─────────────────────────────────────────
-function buildEnemy(sId,isBoss=false){
-  const st=STAGES[sId];
-  const key=isBoss?st.boss:st.enemies[Math.floor(Math.random()*st.enemies.length)];
-  const ed=EDEFS[key];
-  const lv=isBoss?st.lvRange[1]+3:st.lvRange[0]+Math.floor(Math.random()*(st.lvRange[1]-st.lvRange[0]+1));
-  const hp=Math.floor((80+lv*40)*ed.hm);
-  const atk=Math.floor((15+lv*10)*ed.am);
-  const defn=Math.floor((8+lv*5)*ed.dm);
-  const spd=Math.floor(50*ed.sm);
-  return{key,name:ed.name,attr:ed.attr,em:ed.em,level:lv,
-    hp,maxHp:hp,atk,def:defn,spd,charge:0,
-    exp:Math.floor(ed.exp*(0.8+lv*0.04)),gRange:ed.g,drops:ed.drops||[],
-    poisoned:0,defDebuff:1,isBoss:!!ed.boss};
-}
-
-// ── GAME LOOP ─────────────────────────────────────────────
-let gTick=null,expTick=null,ptick=0;
-const TICK=200,ETICK=500;
-
-function startDungeon(){
-  if(gTick)return;
-  gTick=setInterval(gameTick,TICK);
-  expTick=setInterval(exploreTick,ETICK);
-  log('system','✦ 冒険を開始した！');
-  document.getElementById('exp-txt').textContent='⟶ 探索中...';
-  updStartBtn();
-}
-
-function stopDungeon(msg){
-  clearInterval(gTick);clearInterval(expTick);gTick=null;expTick=null;
-  G.dun.active=false;G.dun.inBattle=false;G.dun.enemy=null;G.dun.pending=null;
-  if(msg)log('system',msg);
-  updStartBtn();renderBattle();
-}
-
-function exploreTick(){
-  if(G.dun.inBattle||G.dun.pending)return;
-  const st=STAGES[G.currentStage];
-  G.dun.dist++;
-  if(G.dun.dist>=st.dist){triggerEnc(true);return}
-  if(G.dun.dist>0&&G.dun.dist%st.enc===0)triggerEnc(false);
-  renderDist();
-}
-
-function triggerEnc(boss){
-  const e=buildEnemy(G.currentStage,boss);
-  if(G.dun.auto){startBattle(e)}
-  else{G.dun.pending=e;showEncDlg(e)}
-}
-
-function showEncDlg(e){
-  document.getElementById('enc-title').textContent=`${e.isBoss?'👑 ボス！':''} ⚠ 敵が現れた！`;
-  document.getElementById('enc-desc').textContent=`${e.name}（Lv.${e.level}）が現れた！`;
-  document.getElementById('enc-ovl').classList.remove('hidden');
-}
-
-function fightEnc(){G.dun.pending=null;document.getElementById('enc-ovl').classList.add('hidden');startBattle(G.dun.pending||buildEnemy(G.currentStage))}
-// fix: pending already cleared, store before clearing
-function fightEnc(){
-  const e=G.dun.pending;G.dun.pending=null;
-  document.getElementById('enc-ovl').classList.add('hidden');
-  startBattle(e);
-}
-function fleeEnc(){
-  G.dun.pending=null;document.getElementById('enc-ovl').classList.add('hidden');
-  log('system','💨 逃げた！');G.dun.dist=Math.max(0,G.dun.dist-5);renderDist();
-}
-
-function startBattle(e){
-  G.dun.inBattle=true;G.dun.enemy=e;
-  log('system',`${e.isBoss?'👑【ボス】':''}${e.em} ${e.name}（Lv.${e.level}）が現れた！`);
-  renderBattle();
-}
-
-function gameTick(){
-  if(!G.dun.inBattle||!G.dun.enemy)return;
-  const party=G.party.map(id=>G.chars[id]).filter(c=>c.hp>0);
-  const en=G.dun.enemy;
-
-  if(party.length===0){log('death','💀 全滅した... ダンジョンを離れた。');endDungeon();return}
-  if(en.hp<=0){onKill(en,party);return}
-
-  // Charge
-  const all=[...party,en];
-  for(const c of all)c.charge+=c.spd/10;
-
-  const acting=all.filter(c=>c.charge>=100&&c.hp>0).sort((a,b)=>b.charge-a.charge);
-  for(const actor of acting){
-    if(en.hp<=0||party.every(p=>p.hp<=0))break;
-    actor.charge-=100;
-
-    if(actor===en){
-      const tgts=party.filter(p=>p.hp>0);if(!tgts.length)break;
-      const tg=tgts[Math.floor(Math.random()*tgts.length)];
-      const mult=attrMult(en.attr,tg.attr);
-      const d=Math.floor(Math.max(1,(en.atk*(en.defDebuff||1)-tg.def*.3))*mult*(0.85+Math.random()*.3));
-      tg.hp=Math.max(0,tg.hp-d);
-      log('damage',`${en.em} ${en.name}→${tg.name}: ${d} ダメージ${mult>1?' 💥属性有利！':''}`);
-      if(tg.hp<=0)log('death',`${tg.name} は倒れた...`);
-    } else {
-      let res=null;
-      if(Math.random()<actor.skill.rate)res=actor.skill.exec(actor,[en],party);
-      if(!res){
-        const mult=attrMult(actor.attr,en.attr);
-        const effDef=en.def*(en.defDebuff||1);
-        const d=Math.floor(Math.max(1,(actor.atk-effDef*.3))*mult*(0.85+Math.random()*.3));
-        en.hp=Math.max(0,en.hp-d);
-        log('damage',`${actor.em} ${actor.name}→${en.name}: ${d} ダメージ${mult>1?' ⚡属性有利！':''}`);
-      } else {
-        log(res.type==='heal'?'heal':'skill',res.text);
-      }
-    }
-  }
-
-  // Poison
-  ptick++;
-  if(en.poisoned>0&&ptick%15===0){
-    const pd=Math.floor(en.maxHp*.05);
-    en.hp=Math.max(0,en.hp-pd);en.poisoned--;
-    log('skill',`☠ 毒！${en.name}に ${pd} ダメージ（残${en.poisoned}T）`);
-  }
-
-  renderBattle();renderParty();
-}
-
-function onKill(en,party){
-  G.dun.inBattle=false;G.dun.enemy=null;G.kills++;
-  log('level',`✦ ${en.name} を倒した！EXP+${en.exp}`);
-  const g=en.gRange[0]+Math.floor(Math.random()*(en.gRange[1]-en.gRange[0]+1));
-  G.gold+=g;log('system',`🪙 Gold +${g}`);
-  for(const id of G.party)gainExp(G.chars[id],en.exp);
-  for(const dr of en.drops){
-    if(Math.random()<dr.r){
-      G.inventory.push(dr.k);
-      const id=IDEFS[dr.k];
-      log('system',`📦 ${id?id.ic+' '+id.name:dr.k} を入手！`);
-    }
-  }
-  if(Math.random()<0.15){G.medals++;log('system',`🏅 勲章獲得！（計${G.medals}枚）`)}
-  if(en.isBoss)onStageClear();
-  updHeader();renderBattle();renderParty();renderInv();save();
-}
-
-function onStageClear(){
-  const st=STAGES[G.currentStage];
-  if(!G.clearedStages.includes(G.currentStage))G.clearedStages.push(G.currentStage);
-  log('level',`🎉 ステージ「${st.name}」クリア！`);
-  G.medals+=st.medals;log('system',`🏅 勲章 ${st.medals}枚 獲得！`);
-  const nx=G.currentStage+1;
-  if(nx<STAGES.length&&!G.unlockedStages.includes(nx)){
-    G.unlockedStages.push(nx);
-    log('system',`🗺 新ステージ「${STAGES[nx].name}」が解放された！`);
-  }
-  if(st.unlockChar&&G.chars[st.unlockChar]&&!G.chars[st.unlockChar].unlocked){
-    G.chars[st.unlockChar].unlocked=true;
-    log('level',`👤 ${G.chars[st.unlockChar].name} が仲間に加わった！`);
-  }
-  G.dun.dist=st.dist;renderDist();
-  setTimeout(()=>{stopDungeon();G.dun.dist=0;renderDist();renderChars();},2500);
-}
-
-function endDungeon(){
-  for(const id of G.party){const c=G.chars[id];c.hp=Math.max(1,Math.floor(c.maxHp*.3));c.charge=0}
-  stopDungeon('✦ ダンジョンから撤退した。');
-  G.dun.dist=0;renderDist();renderParty();
-}
-
-function gainExp(c,exp){
-  c.exp+=exp;
-  while(c.exp>=c.expNext){
-    c.exp-=c.expNext;c.level++;c.expNext=expNeeded(c.level);
-    const prev=c.maxHp;recalc(c);c.hp=Math.min(c.maxHp,c.hp+(c.maxHp-prev));
-    log('level',`⬆ ${c.name} がLv.${c.level}になった！`);
-    renderChars();
-  }
-}
-
-// ── UI ────────────────────────────────────────────────────
-function switchView(v){
-  document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
-  document.getElementById('view-'+v).classList.add('active');
-  document.getElementById('nav-'+v).classList.add('active');
-  if(v==='chars')renderChars();
-  if(v==='equip')renderInv();
-}
-
-function toggleDungeon(){
-  if(G.dun.active){endDungeon();return}
-  if(!G.party.length){log('system','⚠ パーティにキャラを追加してください！');return}
-  G.dun.active=true;G.dun.dist=0;
-  for(const id of G.party){const c=G.chars[id];c.hp=c.maxHp;c.charge=Math.random()*30}
-  startDungeon();renderParty();
-}
-
-function setMode(m){
-  G.dun.auto=m==='auto';
-  document.getElementById('btn-auto').classList.toggle('active',G.dun.auto);
-  document.getElementById('btn-manual').classList.toggle('active',!G.dun.auto);
-}
-
-function updStartBtn(){document.getElementById('start-btn').textContent=G.dun.active?'⏹ 撤退':'▶ 出発'}
-function updHeader(){
-  document.getElementById('hdr-gold').textContent=G.gold.toLocaleString();
-  document.getElementById('hdr-medals').textContent=G.medals;
-  document.getElementById('medal-cnt').textContent=G.medals;
-}
-
-function log(type,text){
-  const el=document.getElementById('blog');
-  const d=document.createElement('div');d.className='ll '+type;d.textContent=text;
-  el.appendChild(d);while(el.children.length>120)el.removeChild(el.firstChild);
-  el.scrollTop=el.scrollHeight;
-}
-
-function renderDist(){
-  const st=STAGES[G.currentStage];
-  const p=Math.min(100,(G.dun.dist/st.dist)*100);
-  document.getElementById('dist-bar').style.width=p+'%';
-  document.getElementById('dist-label').textContent=`${G.dun.dist}m / ${st.dist}m`;
-}
-
-function renderBattle(){
-  const en=G.dun.enemy;
-  const expTxt=document.getElementById('exp-txt');
-  const enDisp=document.getElementById('enemy-disp');
-  if(en&&G.dun.inBattle){
-    expTxt.classList.add('hidden');enDisp.classList.remove('hidden');
-    document.getElementById('enemy-em').textContent=en.em;
-    document.getElementById('enemy-nm').textContent=`${en.isBoss?'👑 ':''}${en.name} Lv.${en.level}`;
-    document.getElementById('enemy-nm').style.color=en.isBoss?'var(--gold)':'';
-    const p=Math.max(0,(en.hp/en.maxHp)*100);
-    document.getElementById('ehp-bar').style.width=p+'%';
-    document.getElementById('ehp-txt').textContent=`HP: ${en.hp} / ${en.maxHp}`;
-  } else {
-    expTxt.classList.remove('hidden');enDisp.classList.add('hidden');
-    if(!G.dun.active)expTxt.textContent='「出発」を押してダンジョンへ';
-    else expTxt.textContent='⟶ 探索中...';
-  }
-}
-
-function renderParty(){
-  const c=document.getElementById('party-disp');c.innerHTML='';
-  for(const id of G.party){
-    const ch=G.chars[id];const p=ch.maxHp>0?ch.hp/ch.maxHp*100:0;
-    const hc=p<25?'crit':p<50?'low':'';
-    const div=document.createElement('div');div.className='pm'+(ch.hp<=0?' dead':'');
-    div.innerHTML=`<div class="pm-em">${ch.em}</div><div class="pm-nm">${ch.name}</div><div class="pm-hp-wrap"><div class="pm-hp ${hc}" style="width:${p}%"></div></div>`;
-    c.appendChild(div);
-  }
-}
-
-function renderChars(){
-  const grid=document.getElementById('char-grid');grid.innerHTML='';
-  for(const def of CDEFS){
-    const c=G.chars[def.id];const inP=G.party.includes(def.id);
-    const ep=c.expNext>0?c.exp/c.expNext*100:0;
-    const card=document.createElement('div');
-    card.className='char-card'+(inP?' in-party':'')+(!c.unlocked?' locked':'');
-    card.onclick=()=>toggleParty(def.id);
-    let lockInfo='';
-    if(!c.unlocked){const us=def.unlockStage>=0?STAGES[def.unlockStage]:null;lockInfo=us?`🔒「${us.name}」クリアで仲間に`:'🔒 未解放'}
-    card.innerHTML=`
-      <div class="ch-av">${def.em}</div>
-      <div class="ch-det">
-        <div class="ch-nmrow">
-          <span class="ch-nm">${c.name}</span>
-          <span class="ch-cls">${c.cls}</span>
-          <span class="ab ${c.attr}">${ANAMES[c.attr]}</span>
+function render() {
+    document.getElementById('party-list').innerHTML = party.map(u => `
+        <div class="unit-slot">
+            <div style="display:flex; justify-content:space-between">
+                <span>${u.name}</span><span>HP:${Math.floor(u.curHp)}</span>
+            </div>
+            <div class="bar-container"><div class="hp-fill" style="width:${(u.curHp/u.hp)*100}%"></div></div>
         </div>
-        <div class="ch-lv">Lv.${c.level}</div>
-        <div class="ch-stats">
-          <div class="st">HP <span>${c.hp}/${c.maxHp}</span></div>
-          <div class="st">ATK <span>${c.atk}</span></div>
-          <div class="st">DEF <span>${c.def}</span></div>
-          <div class="st">SPD <span>${Math.floor(c.spd)}</span></div>
-        </div>
-        <div class="ch-skill"><strong>【${c.skill.name}】</strong> ${Math.floor(c.skill.rate*100)}% - ${c.skill.desc}</div>
-        <div class="exp-wrap"><div class="exp-bar" style="width:${ep}%"></div></div>
-        ${!c.unlocked?`<div style="font-size:10px;color:var(--text-dim);margin-top:3px;">${lockInfo}</div>`:''}
-      </div>
-      ${inP?'<div class="party-badge">PARTY</div>':''}
-    `;
-    grid.appendChild(card);
-  }
-}
-
-function toggleParty(id){
-  const c=G.chars[id];if(!c.unlocked)return;
-  if(G.party.includes(id)){G.party=G.party.filter(i=>i!==id)}
-  else{if(G.party.length>=5){log('system','⚠ パーティは最大5人です。');return}G.party.push(id)}
-  renderChars();renderParty();save();
-}
-
-function renderInv(){
-  const list=document.getElementById('inv-list');
-  if(!G.inventory.length){list.innerHTML='<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:30px;">アイテムなし。ダンジョンで敵を倒して集めましょう！</div>';return}
-  const cnt={};for(const k of G.inventory)cnt[k]=(cnt[k]||0)+1;
-  list.innerHTML='';
-  const equips=[],mats=[];
-  for(const[k,n]of Object.entries(cnt)){const d=IDEFS[k];if(!d)continue;(d.type==='mat'?mats:equips).push({k,d,n})}
-  if(equips.length){
-    const t=document.createElement('div');t.className='ptitle';t.textContent='🗡 装備品';list.appendChild(t);
-    for(const{k,d,n}of equips){
-      const r=document.createElement('div');r.className='inv-row';
-      r.innerHTML=`<span style="font-size:22px">${d.ic}</span><div style="flex:1"><div style="font-family:'Cinzel',serif;font-size:12px">${d.name}</div><div style="font-size:10px;color:var(--text-dim)">${d.desc}</div>${d.stats?`<div style="font-size:10px;color:var(--gold)">${Object.entries(d.stats).map(([x,v])=>x.toUpperCase()+'+'+v).join(', ')}</div>`:''}</div><span style="font-size:12px;color:var(--text-dim)">×${n}</span>`;
-      r.onclick=()=>openEquipSel(k,d);list.appendChild(r);
+    `).join('');
+    
+    if(enemy) {
+        document.getElementById('enemy-target').innerHTML = `
+            <div class="enemy-box">
+                <b>${enemy.name}</b><br>
+                HP: ${Math.floor(enemy.curHp)} / ${enemy.hp}
+                <div class="bar-container"><div class="hp-fill" style="width:${(enemy.curHp/enemy.hp)*100}%"></div></div>
+            </div>
+        `;
     }
-  }
-  if(mats.length){
-    const t=document.createElement('div');t.className='ptitle';if(equips.length)t.style.marginTop='8px';t.textContent='📦 素材';list.appendChild(t);
-    const g=document.createElement('div');g.className='inv-grid';
-    for(const{k,d,n}of mats){
-      const c=document.createElement('div');c.className='inv-cell';
-      c.innerHTML=`<div style="font-size:22px">${d.ic}</div><div style="font-size:10px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}</div><div style="font-size:11px;color:var(--gold)">×${n}</div>`;
-      g.appendChild(c);
+}
+
+async function start() {
+    if(isBattle) return;
+    isBattle = true;
+    document.getElementById('start-btn').style.display = 'none';
+    party = KNIGHTS_DATA.map(k => ({...k, curHp: k.hp}));
+    
+    while(floor <= 100 && party.some(p => p.curHp > 0)) {
+        document.getElementById('floor-tag').innerText = `FLOOR: ${floor}/100`;
+        enemy = {
+            name: floor % 10 === 0 ? "BOSS: GUARDIAN" : "TOWER GOLEM",
+            hp: 500 + (floor * 250),
+            atk: 50 + (floor * 15),
+            def: 20 + (floor * 8),
+            dex: 150 + (floor * 10),
+            curHp: 0
+        };
+        enemy.curHp = enemy.hp;
+        addLog(`Floor ${floor} に突入。`);
+        
+        while(enemy.curHp > 0 && party.some(p => p.curHp > 0)) {
+            const actors = [...party.filter(p => p.curHp > 0), enemy].sort((a,b) => b.dex - a.dex);
+            for(let a of actors) {
+                if(a.curHp <= 0 || enemy.curHp <= 0) continue;
+                let t = (a === enemy) ? party.filter(p => p.curHp > 0)[0] : enemy;
+                
+                let dmg = Math.max(1, a.atk - (t.def/2));
+                const crit = (a.dex / (a.dex + 2000)) * 100 > Math.random()*100;
+                if(crit) dmg *= 1.5;
+                
+                t.curHp -= dmg;
+                addLog(`${a.name}の攻撃: ${Math.floor(dmg)}点`);
+                render();
+                await new Promise(r => setTimeout(r, 100));
+                if(party.every(p => p.curHp <= 0)) break;
+            }
+        }
+        if(party.every(p => p.curHp <= 0)) break;
+        floor++;
+        addLog(`階層クリア。次のフロアへ...`);
+        await new Promise(r => setTimeout(r, 500));
     }
-    list.appendChild(g);
-  }
+    
+    addLog(floor > 100 ? "完全制覇！" : "全滅...");
+    isBattle = false;
+    document.getElementById('start-btn').style.display = 'block';
+    floor = 1;
 }
 
-function openEquipSel(ik,id){
-  const type=id.type;
-  const chars=CDEFS.map(d=>G.chars[d.id]).filter(c=>c.unlocked);
-  const ovl=document.createElement('div');ovl.className='overlay';ovl.style.zIndex=200;
-  const dlg=document.createElement('div');dlg.className='dlg';
-  dlg.innerHTML=`<h3>${id.ic} ${id.name} を装備</h3><div style="font-size:11px;color:var(--text-dim);text-align:center;margin-bottom:10px">${id.desc}${id.stats?' | '+Object.entries(id.stats).map(([k,v])=>k.toUpperCase()+'+'+v).join(', '):''}</div>`;
-  const ml=document.createElement('div');ml.className='mc-list';
-  for(const c of chars){
-    const cur=c.equipped[type];const r=document.createElement('div');r.className='mc-item';
-    r.innerHTML=`<span class="mc-em">${c.em}</span><div class="mc-inf"><div class="mc-nm">${c.name}</div><div class="mc-hp">${cur?'現在: '+cur.name:'装備なし'}</div></div>`;
-    r.onclick=()=>{
-      if(cur){const ck=Object.keys(IDEFS).find(k=>IDEFS[k]===cur);if(ck)G.inventory.push(ck)}
-      c.equipped[type]=id;
-      const idx=G.inventory.indexOf(ik);if(idx>=0)G.inventory.splice(idx,1);
-      recalc(c);document.body.removeChild(ovl);renderInv();renderChars();save();
-    };
-    ml.appendChild(r);
-  }
-  dlg.appendChild(ml);
-  const cb=document.createElement('button');cb.className='cancel-btn';cb.textContent='キャンセル';cb.onclick=()=>document.body.removeChild(ovl);
-  dlg.appendChild(cb);ovl.appendChild(dlg);document.body.appendChild(ovl);
-}
-
-function openMedalOvl(){
-  if(G.medals<=0){log('system','🏅 勲章がありません！');return}
-  const list=document.getElementById('mc-list');list.innerHTML='';
-  for(const id of G.party){
-    const c=G.chars[id];const dead=c.hp<=0;
-    const r=document.createElement('div');r.className='mc-item'+(dead?' dead':'');
-    r.innerHTML=`<span class="mc-em">${c.em}</span><div class="mc-inf"><div class="mc-nm">${c.name}</div><div class="mc-hp">${dead?'戦闘不能':'HP: '+c.hp+' / '+c.maxHp}</div></div><span style="font-size:11px;color:var(--green)">${dead?'':'+'+ Math.floor(c.maxHp*.5)}</span>`;
-    if(!dead)r.onclick=()=>useMedal(id);
-    list.appendChild(r);
-  }
-  document.getElementById('medal-ovl').classList.remove('hidden');
-}
-function closeMedalOvl(){document.getElementById('medal-ovl').classList.add('hidden')}
-
-function useMedal(id){
-  if(G.medals<=0)return;
-  const c=G.chars[id];const h=Math.floor(c.maxHp*.5);
-  c.hp=Math.min(c.maxHp,c.hp+h);G.medals--;
-  log('heal',`🏅 ${c.name}に勲章を使用！ HP +${h}`);
-  updHeader();renderParty();closeMedalOvl();save();
-}
-
-function openStageOvl(){
-  const list=document.getElementById('stage-list');list.innerHTML='';
-  for(const st of STAGES){
-    const unlk=G.unlockedStages.includes(st.id);
-    const act=G.currentStage===st.id;
-    const clr=G.clearedStages.includes(st.id);
-    const item=document.createElement('div');
-    item.className='stage-item'+(act?' active':'')+(!unlk?' locked':'');
-    item.innerHTML=`<div class="si-nm">${st.em} ${st.name}${clr?' ✓':''}${!unlk?' 🔒':''}</div><div class="si-desc">${st.desc}</div><div style="font-size:10px;color:var(--text-dim);margin-top:3px">距離: ${st.dist}m | 敵Lv: ${st.lvRange[0]}〜${st.lvRange[1]}</div>`;
-    if(unlk)item.onclick=()=>selStage(st.id);
-    list.appendChild(item);
-  }
-  document.getElementById('stage-ovl').classList.remove('hidden');
-}
-function closeStageOvl(){document.getElementById('stage-ovl').classList.add('hidden')}
-
-function selStage(id){
-  if(G.dun.active){log('system','⚠ 探索中はステージを変更できません。');closeStageOvl();return}
-  G.currentStage=id;G.dun.dist=0;
-  const st=STAGES[id];
-  document.getElementById('stage-name').textContent=st.name;
-  document.getElementById('stage-desc').textContent=st.desc;
-  renderDist();closeStageOvl();save();
-}
-
-// ── INIT ─────────────────────────────────────────────────
-load();
-const st=STAGES[G.currentStage];
-document.getElementById('stage-name').textContent=st.name;
-document.getElementById('stage-desc').textContent=st.desc;
-updHeader();renderDist();renderParty();renderChars();
-
-setInterval(save,30000);
-setInterval(updHeader,1000);
+window.onload = () => {
+    document.getElementById('start-btn').addEventListener('click', start);
+    addLog("準備完了。探索を開始してください。");
+};
 </script>
 </body>
-</html
+</html>

@@ -3,176 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BABEL: THE ASCENSION</title>
+    <title>BABEL: THE ASCENSION v1.25</title>
     <style>
         :root { --bg: #050505; --panel: #111; --acc: #ffd700; --hp: #ff4d4d; --ct: #4da6ff; --msg: #001a33; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
-        #game-container { width: 100%; max-width: 500px; height: 100%; display: grid; grid-template-rows: 50px 1fr 180px 100px; border-left: 1px solid #333; border-right: 1px solid #333; }
+        #game-container { width: 100%; max-width: 500px; height: 100%; display: grid; grid-template-rows: 50px 1fr 200px 120px; border-left: 1px solid #333; border-right: 1px solid #333; }
         header { background: #222; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid var(--acc); font-size: 13px; font-weight: bold; }
         #main-stage { position: relative; background: #000; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #explore-overlay { position: absolute; top: 10px; width: 90%; display: flex; flex-direction: column; gap: 5px; z-index: 10; }
         .progress-container { background: #333; height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid #555; }
         #progress-bar { height: 100%; background: linear-gradient(90deg, #555, var(--acc)); width: 0%; transition: width 0.2s; }
-        #enemy-visual { width: 150px; height: 150px; object-fit: contain; margin-bottom: 10px; transition: transform 0.1s; }
+        #enemy-visual-container { width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        #enemy-visual, #chest-visual { max-width: 100%; max-height: 100%; object-fit: contain; }
         #party-tray { background: #000; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 4px; border-top: 1px solid #444; }
-        .member-card { background: var(--panel); border: 1px solid #333; height: 170px; display: flex; flex-direction: column; position: relative; cursor: pointer; font-size: 10px; }
-        .member-card.is-leader { border: 1.5px solid var(--acc); box-shadow: inset 0 0 10px rgba(255,215,0,0.3); }
-        .char-img { width: 100%; height: 70px; background: #222; object-fit: cover; }
+        .member-card { background: var(--panel); border: 1px solid #333; height: 190px; display: flex; flex-direction: column; position: relative; cursor: pointer; font-size: 9px; }
+        .member-card.is-leader { border: 2px solid var(--acc); box-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .char-img { width: 100%; height: 80px; background: #222; object-fit: cover; }
         .status-mini { padding: 4px; line-height: 1.2; }
-        .bar-wrap { width: 90%; height: 6px; background: #000; margin: 2px auto; border: 1px solid #333; position: relative; }
+        .bar-wrap { width: 95%; height: 6px; background: #000; margin: 2px auto; border: 1px solid #333; }
         .bar-fill { height: 100%; transition: width 0.3s; }
-        #message-window { background: var(--msg); border-top: 2px solid #06c; padding: 10px; font-size: 12px; overflow-y: auto; line-height: 1.5; }
-        .btn-start { background: #820; color: #fff; border: 2px solid var(--acc); padding: 15px 30px; font-weight: bold; cursor: pointer; font-size: 18px; }
-        .event-pop { position: absolute; color: var(--acc); font-weight: bold; font-size: 20px; animation: popUp 1s forwards; pointer-events: none; }
-        @keyframes popUp { 0% { opacity:1; transform:translateY(0); } 100% { opacity:0; transform:translateY(-50px); } }
+        #message-window { background: var(--msg); border-top: 2px solid #06c; padding: 10px; font-size: 11px; overflow-y: auto; line-height: 1.4; color: #fff; }
+        .btn-start { background: #a20; color: #fff; border: 2px solid var(--acc); padding: 15px 30px; font-weight: bold; cursor: pointer; font-size: 18px; }
     </style>
 </head>
 <body>
 <div id="game-container">
-    <header><div id="txt-gold">Gold: 0</div><div id="txt-medal">勲章: 0</div></header>
+    <header><div id="txt-gold">Gold: 15,000,000</div><div id="txt-medal">勲章: 0</div></header>
     <div id="main-stage">
         <div id="explore-overlay">
-            <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:bold;">
-                <span>Babel <span id="txt-floor">1</span>F</span>
+            <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:bold;">
+                <span>Babel [ <span id="txt-floor">1</span>F ]</span>
                 <span><span id="txt-meter">0</span> / 100 m</span>
             </div>
             <div class="progress-container"><div id="progress-bar"></div></div>
         </div>
         <div id="enemy-display" style="text-align:center;">
-            <img id="enemy-visual" src="" style="display:none;">
-            <div id="enemy-name" style="font-weight:bold; color:var(--hp);"></div>
+            <div id="enemy-visual-container">
+                <img id="enemy-visual" src="" style="display:none;">
+                <img id="chest-visual" src="" style="display:none;">
+            </div>
+            <div id="enemy-name" style="font-weight:bold; color:var(--hp); min-height:1.2em;"></div>
         </div>
         <button class="btn-start" id="start-btn">探索開始</button>
     </div>
     <div id="party-tray"></div>
-    <div id="message-window">Babelの塔、調査準備完了。</div>
+    <div id="message-window">Babel踏破の準備が整いました。</div>
 </div>
 
 <script>
-// ガイドライン遵守：BigInt使用・0除算・nullチェック徹底
-const K_DATA = [
-    { id:1, name:"グラディウス", hp:3500n, atk:120n, def:250n, dex:300n, chance:20, ct:5, as:"不落の守護", ps:"重鎖の加護", ls:"DEF+20%" },
-    { id:2, name:"ヴァレリア", hp:2200n, atk:280n, def:120n, dex:950n, chance:35, ct:4, as:"迅雷閃", ps:"迅雷の加護", ls:"DEX+15%" },
-    { id:15, name:"ゼイン", hp:3200n, atk:330n, def:160n, dex:400n, chance:25, ct:6, as:"夜喰らい", ps:"与ダメ吸収", ls:"吸血+10%" },
-    { id:16, name:"イザナ", hp:2800n, atk:360n, def:140n, dex:500n, chance:25, ct:6, as:"血契の抱擁", ps:"底力ATK2倍", ls:"ATK+25%" },
-    { id:20, name:"アベル", hp:2500n, atk:450n, def:130n, dex:700n, chance:15, ct:7, as:"零界", ps:"理無効化", ls:"全ステ+10%" }
+// --- データ定義 ---
+const KNIGHTS = [
+    { id:1, name:"グラディウス", lv:1, hp:3500n, atk:120n, def:250n, dex:300n, chance:20, ct:5, as:"不落の守護", ps:"重鎖の加護", equips:{wpn:null, arm:null, acc:null} },
+    { id:2, name:"ヴァレリア", lv:1, hp:2200n, atk:280n, def:120n, dex:950n, chance:35, ct:4, as:"迅雷閃", ps:"迅雷の加護", equips:{wpn:null, arm:null, acc:null} },
+    { id:3, name:"バルド", lv:1, hp:3000n, atk:350n, def:150n, dex:400n, chance:25, ct:6, as:"ブラッドレイジ", ps:"不死の呪い", equips:{wpn:null, arm:null, acc:null} },
+    { id:12, name:"ミラ", lv:1, hp:2400n, atk:120n, def:140n, dex:500n, chance:20, ct:8, as:"幻晶の盾", ps:"幻の水晶", equips:{wpn:null, arm:null, acc:null} },
+    { id:20, name:"アベル", lv:1, hp:2500n, atk:450n, def:130n, dex:700n, chance:15, ct:7, as:"零界", ps:"理無効化", equips:{wpn:null, arm:null, acc:null} }
 ];
 
-const MONSTERS = {
-    normal: ["グリーンスライム", "ブラッドバット", "スケルトン", "スプリン", "ウルフ"],
-    mid: ["スケルトンロード", "ソウルイーター", "ヒュドラ", "オーガキング", "デーモンクイーン"]
+const M_BOSSES = ["スケルトンロード", "ソウルイーター", "ヒュドラ", "オーガキング", "デーモンクイーン", "古代の守護者", "アイ・オブ・カオス", "シャドウドラゴン"];
+const MAJOR_BOSSES = ["子×牡羊座", "丑×牡牛座", "寅×双子座", "卯×蟹座", "辰×獅子座", "巳×乙女座", "午×天秤座", "未×蠍座", "申×射手座", "酉×山羊座", "戌×水瓶座", "亥×魚座"];
+const CHESTS = {
+    IRON: { label:"鉄の宝箱", img:"chest_01.png", plus:0, color:"#888" },
+    BRONZE: { label:"銅の宝箱", img:"chest_02.png", plus:1, color:"#cd7f32" },
+    SILVER: { label:"銀の宝箱", img:"chest_03.png", plus:2, color:"#c0c0c0" },
+    GOLD: { label:"金の宝箱", img:"chest_04.png", plus:3, color:"#ffd700" },
+    DIAMOND: { label:"ダイヤの宝箱", img:"chest_05.png", plus:4, color:"#b9f2ff" },
+    ANCIENT: { label:"いにしえの秘宝", img:"chest_06.png", plus:4, color:"#a0f" }
 };
 
-const CHEST_TYPES = {
-    IRON: { label: "鉄の宝箱", plus: 0, color: "#888" },
-    BRONZE: { label: "銅の宝箱", plus: 1, color: "#cd7f32" },
-    SILVER: { label: "銀の宝箱", plus: 2, color: "#c0c0c0" },
-    GOLD: { label: "金の宝箱", plus: 3, color: "#ffd700" },
-    DIAMOND: { label: "ダイヤの宝箱", plus: 4, color: "#b9f2ff" }
-};
-
-let party = K_DATA.map((k, i) => ({ ...k, curHp: k.hp, curCt: 0, isLeader: (i===0) }));
+let party = KNIGHTS.map((k, i) => ({ ...k, curHp: k.hp, curCt: 0, isLeader: (i===0) }));
 let floor = 1, meter = 0, gold = 15000000n, isExploring = false;
 
-// 装備性能計算ロジック：(base + bonus) * (quality / 100)
-function calcEquip(base, plus, quality) {
-    const bonusTable = [0, 0.12, 0.26, 0.44, 0.65];
-    const bonus = Number(base) * bonusTable[plus];
-    return BigInt(Math.floor((Number(base) + bonus) * (quality / 100)));
+// --- ロジック ---
+function calcStat(base, plus, quality) {
+    const bonus = [0, 0.12, 0.26, 0.44, 0.65];
+    return BigInt(Math.floor((Number(base) + (Number(base) * bonus[plus])) * (quality / 100)));
 }
 
-function log(msg) {
-    const win = document.getElementById('message-window');
-    win.innerHTML = `> ${msg}<br>` + win.innerHTML;
+async function tryChallenge(label) {
+    const challengers = [...party.filter(p => p.curHp > 0)].sort((a,b) => Number(b.dex - a.dex));
+    for (let p of challengers) {
+        const rate = Math.min(95, Math.max(5, Number(p.dex) / (floor * 15)));
+        if (Math.random() * 100 < rate) {
+            log(`${p.name}が${label}の解除に成功！`);
+            return true;
+        }
+        log(`${p.name}は失敗…`);
+        await new Promise(r => setTimeout(r, 100));
+    }
+    return false;
+}
+
+async function doBattle(isBossMeter) {
+    isExploring = false;
+    let e = { name:"", hp:0n, img:"", isBoss:false, isFinal: (floor === 100 && isBossMeter) };
+    
+    if (e.isFinal) {
+        log("<span style='color:#f0f'>最上階到達。しかし、何かがおかしい。未実装の領域です。</span>");
+        return;
+    } else if (floor >= 88 && isBossMeter) {
+        const idx = (floor - 88) % 12;
+        e = { name:`大ボス:${MAJOR_BOSSES[idx]}`, hp:BigInt(floor*30000), img:`major_${idx+1}.png`, isBoss:true };
+    } else if (isBossMeter) {
+        const idx = (Math.floor(floor/10)-1)%8;
+        e = { name:`中ボス:${M_BOSSES[idx]}`, hp:BigInt(floor*15000), img:`mid_${idx+1}.png`, isBoss:true };
+    } else {
+        e = { name:"通常モンスター", hp:BigInt(floor*1500), img:`mob.png`, isBoss:false };
+    }
+
+    document.getElementById('enemy-name').innerText = e.name;
+    document.getElementById('enemy-visual').style.display = 'block';
+    log(`${e.name}との戦闘開始！`);
+    
+    let curEHp = e.hp;
+    while(curEHp > 0 && party.some(p => p.curHp > 0)) {
+        for(let p of party.filter(u => u.curHp > 0)) {
+            let dmg = p.atk;
+            if(p.curCt === 0 && Math.random()*100 < p.chance) {
+                dmg *= 3n; p.curCt = p.ct; log(`${p.name}のAS発動！ ${dmg}ダメ！`);
+            } else if(p.curCt > 0) p.curCt--;
+            curEHp -= dmg;
+            if(curEHp <= 0) break;
+            await new Promise(r => setTimeout(r, 50));
+        }
+        if(curEHp > 0) {
+            const target = party.filter(p => p.curHp > 0)[0];
+            target.curHp -= BigInt(floor * 100);
+        }
+        render();
+    }
+    document.getElementById('enemy-visual').style.display = 'none';
+    if(curEHp <= 0) {
+        log(`${e.name}を撃破！`);
+        if(isBossMeter) await dropChest(floor % 10 === 0 ? CHESTS.GOLD : CHESTS.SILVER);
+    }
+    isExploring = true;
+}
+
+async function dropChest(type) {
+    const q = Math.floor(Math.random()*100)+1;
+    const p = Math.floor(Math.random()*(type.plus+1));
+    document.getElementById('chest-visual').src = type.img;
+    document.getElementById('chest-visual').style.display = 'block';
+    log(`<span style="color:${type.color}">${type.label}獲得！品質:${q}% ＋${p}</span>`);
+    gold += BigInt(q * 1000);
+    await new Promise(r => setTimeout(r, 800));
+    document.getElementById('chest-visual').style.display = 'none';
+}
+
+function log(m) {
+    const w = document.getElementById('message-window');
+    w.innerHTML = `> ${m}<br>${w.innerHTML}`;
 }
 
 function render() {
     document.getElementById('txt-floor').innerText = floor;
     document.getElementById('txt-meter').innerText = meter;
-    document.getElementById('txt-gold').innerText = `Gold: ${gold.toLocaleString()}G`;
+    document.getElementById('txt-gold').innerText = `Gold: ${gold.toLocaleString()}`;
     document.getElementById('progress-bar').style.width = `${meter}%`;
-
     const tray = document.getElementById('party-tray');
     tray.innerHTML = party.map((u, i) => `
-        <div class="member-card ${u.isLeader ? 'is-leader' : ''}" onclick="setLeader(${i})">
-            <img src="No.${String(u.id).padStart(2, '0')}.png" class="char-img" onerror="this.src='https://via.placeholder.com/70?text=No.${u.id}'">
+        <div class="member-card ${u.isLeader ? 'is-leader' : ''}">
+            <img src="No.${u.id}.png" class="char-img" onerror="this.src='https://via.placeholder.com/80'">
             <div class="status-mini">
-                <b>${u.name}</b><br>
-                HP: ${u.curHp}/${u.hp}<br>
-                <div class="bar-wrap"><div class="bar-fill" style="width:${Number(u.curHp * 100n / u.hp)}%; background:var(--hp);"></div></div>
-                CT: ${u.curCt}/${u.ct}<br>
-                <div class="bar-wrap"><div class="bar-fill" style="width:${(u.curCt / u.ct) * 100}%; background:var(--ct);"></div></div>
+                <b>Lv.${u.lv} ${u.name}</b><br>
+                HP:${u.curHp}/${u.hp}<br>
+                <div class="bar-wrap"><div class="bar-fill" style="width:${Number(u.curHp*100n/u.hp)}%; background:var(--hp);"></div></div>
+                CT:${u.curCt}/${u.ct}<br>
+                <div class="bar-wrap"><div class="bar-fill" style="width:${(u.curCt/u.ct)*100}%; background:var(--ct);"></div></div>
             </div>
         </div>`).join('');
 }
 
-function setLeader(idx) { if(!isExploring) { party.forEach((p, i) => p.isLeader = (i === idx)); render(); } }
-
-async function startExplore() {
-    isExploring = true;
-    document.getElementById('start-btn').style.display = 'none';
-    
+async function start() {
+    isExploring = true; document.getElementById('start-btn').style.display = 'none';
     while(isExploring && party.some(p => p.curHp > 0)) {
         meter++;
-        if(meter >= 100) {
-            await doBattle(true); // 100mエリート戦
-            meter = 0; floor++;
-        } else {
-            await handleRandomEvent();
+        if(meter >= 100) { await doBattle(true); meter = 0; floor++; }
+        else {
+            const r = Math.random();
+            if(r < 0.08) await doBattle(false);
+            else if(r < 0.10) { if(await tryChallenge("トラップ")) log("回避！"); else party.forEach(p => p.curHp -= p.hp/10n); }
+            else if(r < 0.12) { if(await tryChallenge("宝箱")) await dropChest(CHESTS.IRON); else log("消失…"); }
         }
-        render();
-        await new Promise(r => setTimeout(r, 100));
+        render(); await new Promise(r => setTimeout(r, 100));
     }
+    document.getElementById('start-btn').style.display = 'block';
 }
 
-async function handleRandomEvent() {
-    const roll = Math.random();
-    if(roll < 0.05) await doBattle(false); // 通常戦闘
-    else if(roll < 0.07) triggerTrap();
-    else if(roll < 0.09) dropChest(CHEST_TYPES.BRONZE);
-    else if(roll < 0.10) { party.forEach(p => p.curHp = p.hp); log("回復の泉：全回復！"); }
-}
-
-async function doBattle(isElite) {
-    const eName = isElite ? "ELITE " + MONSTERS.normal[Math.floor(Math.random()*5)] : MONSTERS.normal[Math.floor(Math.random()*5)];
-    const eHp = BigInt(floor * (isElite ? 2000 : 500));
-    let curEHp = eHp;
-    
-    document.getElementById('enemy-name').innerText = eName;
-    document.getElementById('enemy-visual').style.display = 'block';
-    log(`${eName} が出現！`);
-
-    while(curEHp > 0 && party.some(p => p.curHp > 0)) {
-        for(let p of party.filter(u => u.curHp > 0)) {
-            let dmg = p.atk * BigInt(isElite ? 1 : 2);
-            if(p.curCt === 0 && Math.random()*100 < p.chance) {
-                dmg *= 2n; p.curCt = p.ct; log(`${p.name}のAS：${p.as}！`);
-            } else if(p.curCt > 0) p.curCt--;
-            
-            curEHp -= dmg;
-            if(curEHp <= 0) break;
-            await new Promise(r => setTimeout(r, 50));
-        }
-    }
-    document.getElementById('enemy-visual').style.display = 'none';
-    document.getElementById('enemy-name').innerText = "";
-    if(isElite) dropChest(CHEST_TYPES.SILVER);
-}
-
-function dropChest(type) {
-    const quality = Math.floor(Math.random() * 100) + 1;
-    const plus = Math.floor(Math.random() * (type.plus + 1));
-    log(`<span style="color:${type.color}">${type.label}獲得！品質:${quality}% ＋${plus}</span>`);
-    gold += BigInt(quality * 1000);
-}
-
-function triggerTrap() {
-    const target = party[Math.floor(Math.random()*5)];
-    target.curHp -= target.hp / 10n;
-    log(`トラップ！ ${target.name}がダメージ！`);
-}
-
-document.getElementById('start-btn').onclick = startExplore;
+document.getElementById('start-btn').onclick = start;
 render();
 </script>
 </body>

@@ -7,29 +7,25 @@
     <style>
         :root { --bg: #050505; --panel: #1a1a1a; --acc: #ffd700; --hp: #ff4d4d; --dex: #4da6ff; --msg: #001a33; }
         body { background: var(--bg); color: #e0e0e0; font-family: sans-serif; margin: 0; height: 100vh; display: flex; justify-content: center; overflow: hidden; }
-        #game-container { width: 100%; max-width: 500px; height: 100%; display: grid; grid-template-rows: 60px 1fr 180px 120px; border: 2px solid #333; }
+        #game-container { width: 100%; max-width: 500px; height: 100%; display: grid; grid-template-rows: 60px 1fr 180px 100px; border: 2px solid #333; }
         
-        /* 上段：リソース・メニュー */
-        header { background: #222; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid var(--acc); font-size: 13px; font-weight: bold; }
-        .btn-ui { background: #444; color: #fff; border: 1px solid #666; padding: 4px 10px; cursor: pointer; font-size: 11px; }
-
-        /* 中段：世界灯台（探索・拠点メイン） */
-        #main-stage { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(to bottom, #000, #111); }
-        #floor-badge { position: absolute; top: 15px; left: 15px; background: rgba(0,0,50,0.8); border-radius: 30px; padding: 5px 15px; font-weight: bold; border: 1px solid var(--dex); }
-        #enemy-box { width: 220px; padding: 15px; background: #200; border: 2px solid #800; text-align: center; display: none; }
-
-        /* 下段：常設パーティ（画像9の再現） */
-        #party-tray { background: #000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-top: 1px solid #333; }
-        .member-slot { background: #1a1a1a; border: 1px solid #444; padding: 4px; font-size: 11px; text-align: center; }
-        .hp-bar { width: 100%; height: 6px; background: #333; margin-top: 4px; overflow: hidden; }
+        header { background: #222; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid var(--acc); font-size: 13px; }
+        #main-stage { position: relative; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        
+        /* 下段パーティエリア：画像9の再現 */
+        #party-tray { background: #000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; border-top: 1px solid #444; }
+        .member-card { background: #111; border: 1px solid #333; position: relative; height: 85px; display: flex; flex-direction: column; }
+        .char-img { width: 100%; height: 50px; background: #222; object-fit: cover; }
+        .char-info { padding: 2px; font-size: 10px; text-align: center; }
+        
+        .hp-bar { width: 100%; height: 4px; background: #333; position: absolute; bottom: 4px; }
         .hp-fill { height: 100%; background: var(--hp); transition: width 0.2s; }
-        .ct-bar { width: 100%; height: 3px; background: #111; margin-top: 2px; }
-        .ct-fill { height: 100%; background: var(--dex); transition: width 0.1s; }
+        .ct-bar { width: 100%; height: 2px; background: #000; position: absolute; bottom: 0; }
+        .ct-fill { height: 100%; background: var(--dex); transition: width 0.3s; }
 
-        /* 最下段：メッセージウィンドウ（画像8の再現） */
-        #message-window { background: var(--msg); border-top: 2px solid #06c; padding: 10px; font-size: 12px; color: #fff; line-height: 1.5; overflow-y: auto; }
-        
-        .btn-action { margin-top: 20px; background: #850; color: #fff; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; box-shadow: 0 0 10px rgba(255,100,0,0.5); }
+        #message-window { background: var(--msg); border-top: 2px solid #06c; padding: 8px; font-size: 11px; overflow-y: auto; }
+        .btn-action { background: #850; color: #fff; border: none; padding: 12px 24px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        #enemy-box { width: 180px; padding: 10px; background: rgba(50,0,0,0.8); border: 2px solid #800; text-align: center; margin-bottom: 10px; z-index: 10; }
     </style>
 </head>
 <body>
@@ -37,129 +33,98 @@
 <div id="game-container">
     <header>
         <div>Gold: 15,052,073G</div>
-        <div style="display:flex; gap:5px;">
-            <button class="btn-ui">装備変更</button>
-            <button class="btn-ui">部隊編成</button>
-        </div>
+        <button onclick="alert('部隊編成画面へ（未実装）')">部隊編成</button>
     </header>
 
     <div id="main-stage">
-        <div id="floor-badge">F25 20m</div>
-        <div id="enemy-box"></div>
-        <h2 id="stage-title" style="color:var(--dex); text-shadow: 0 0 10px #000;">世界灯台 25階</h2>
+        <div id="enemy-box" style="display:none"></div>
+        <h2 id="stage-title" style="color:var(--acc)">世界灯台 25階</h2>
         <button class="btn-action" id="start-btn">ダンジョンへ</button>
     </div>
 
-    <div id="party-tray" id="party-list">
-        </div>
+    <div id="party-tray" id="party-list"></div>
 
-    <div id="message-window" id="msg-box">
-        アベル：存在が不安定な謎多き剣士。全ての理を消し飛ばす準備はできている。
+    <div id="message-window" id="log">
+        準備完了。部隊は待機しています。
     </div>
 </div>
 
 <script>
-// 解放の騎士団：全20名のデータ（前回の定義を完全反映）
-const ALL_KNIGHTS = [
-    { id: 1, name: "グラディウス", hp: 1500, atk: 120, def: 200, dex: 300, as: "不落の守護", ct: 5 },
-    { id: 2, name: "ヴァレリア", hp: 900, atk: 180, def: 100, dex: 900, as: "迅雷閃", ct: 4 },
-    { id: 3, name: "バルド", hp: 1300, atk: 210, def: 150, dex: 400, as: "ブラッドレイジ", ct: 6 },
-    { id: 10, name: "エリア", hp: 900, atk: 80, def: 120, dex: 500, as: "リカバリー", ct: 5 },
-    { id: 12, name: "ミラ", hp: 1100, atk: 100, def: 150, dex: 450, as: "幻晶の光", ct: 6 },
-    { id: 14, name: "リリス", hp: 1000, atk: 150, def: 120, dex: 550, as: "魅惑の抱擁", ct: 5 },
-    { id: 20, name: "アベル", hp: 1200, atk: 250, def: 130, dex: 650, as: "ゼロ・フォース", ct: 5 }
+// 解放の騎士団：全20名データ（画像とスキル・確率・CTを統合）
+const KNIGHTS = [
+    { id: 1, name: "グラディウス", chance: 20, maxCt: 5, atk: 120, def: 200, dex: 300, hp: 2600, img: "https://via.placeholder.com/150/222/fff?text=01" },
+    { id: 2, name: "ヴァレリア", chance: 30, maxCt: 4, atk: 180, def: 100, dex: 900, hp: 2000, img: "https://via.placeholder.com/150/222/fff?text=02" },
+    { id: 3, name: "バルド", chance: 25, maxCt: 6, atk: 210, def: 150, dex: 400, hp: 2400, img: "https://via.placeholder.com/150/222/fff?text=03" },
+    { id: 12, name: "ミラ", chance: 15, maxCt: 8, atk: 100, def: 150, dex: 450, hp: 2200, img: "https://via.placeholder.com/150/222/fff?text=12" },
+    { id: 20, name: "アベル", chance: 10, maxCt: 7, atk: 250, def: 130, dex: 650, hp: 2300, img: "https://via.placeholder.com/150/222/fff?text=20" }
 ];
 
-// 画像9の編成例に基づき5名を選抜（グラディウス、ヴァレリア、バルド、ミラ、アベル）
-let party = ALL_KNIGHTS.filter(k => [1,2,3,12,20].includes(k.id)).map(k => ({...k, curHp: k.hp, curCt: 0}));
+let party = KNIGHTS.map(k => ({...k, curHp: k.hp, curCt: 0}));
 let enemy = null;
-let floor = 25;
-let isExploring = false;
 
-function log(m) {
-    const box = document.getElementById('message-window');
-    box.innerHTML = m;
+function addLog(m) {
+    const l = document.getElementById('log');
+    l.innerHTML = `> ${m}`;
 }
 
 function render() {
     const tray = document.getElementById('party-tray');
     tray.innerHTML = party.map(u => `
-        <div class="member-slot">
-            <div style="margin-bottom:2px"><b>${u.name}</b></div>
-            <div style="font-size:9px">${Math.floor(u.curHp)} / ${u.hp}</div>
+        <div class="member-card">
+            <img src="${u.img}" class="char-img">
+            <div class="char-info"><b>${u.name}</b></div>
             <div class="hp-bar"><div class="hp-fill" style="width:${(u.curHp/u.hp)*100}%"></div></div>
-            <div class="ct-bar"><div class="ct-fill" style="width:${(u.curCt/u.ct)*100}%"></div></div>
+            <div class="ct-bar"><div class="ct-fill" style="width:${u.curCt > 0 ? (u.curCt/u.maxCt)*100 : 0}%"></div></div>
         </div>
     `).join('');
 
     if(enemy) {
-        const eBox = document.getElementById('enemy-box');
-        eBox.style.display = 'block';
-        eBox.innerHTML = `
-            <div style="font-size:14px; font-weight:bold;">${enemy.name}</div>
-            <div class="hp-bar" style="height:10px;"><div class="hp-fill" style="width:${(enemy.curHp/enemy.hp)*100}%"></div></div>
-        `;
+        const eb = document.getElementById('enemy-box');
+        eb.style.display = 'block';
+        eb.innerHTML = `<b>${enemy.name}</b><div class="hp-bar" style="position:static; margin-top:5px; height:8px;"><div class="hp-fill" style="width:${(enemy.curHp/enemy.hp)*100}%"></div></div>`;
     }
 }
 
-async function runBattle() {
-    enemy = { name: "灯台の番人", hp: 3000 + (floor * 200), curHp: 3000 + (floor * 200), atk: 150 + (floor * 10), def: 100 + (floor * 5), dex: 300 + (floor * 10) };
-    log("番人が現れた！戦闘開始。");
+async function startExploration() {
+    document.getElementById('start-btn').style.display = 'none';
+    enemy = { name: "灯台の守護者", hp: 6000, curHp: 6000, atk: 220, def: 120, dex: 400 };
     
     while(enemy.curHp > 0 && party.some(p => p.curHp > 0)) {
         const actors = [...party.filter(p => p.curHp > 0), enemy].sort((a,b) => b.dex - a.dex);
         
         for(let a of actors) {
-            if(a.curHp <= 0 || (enemy.curHp <= 0 && a !== enemy)) continue;
+            if(a.curHp <= 0 || (enemy && enemy.curHp <= 0 && a !== enemy)) continue;
             let t = (a === enemy) ? party.filter(p => p.curHp > 0)[0] : enemy;
-            
-            // 行動
+
             if(a !== enemy) {
-                a.curCt++;
-                if(a.curCt >= a.ct) {
-                    let sdmg = Math.floor(a.atk * (a.id === 20 ? 3 : 1.5));
-                    t.curHp -= sdmg;
-                    log(`★ ${a.name}のスキル [${a.as}]! ${sdmg}のダメージ！`);
-                    a.curCt = 0;
-                    if(a.id === 12) party.forEach(p => p.curHp = Math.min(p.hp, p.curHp + p.hp*0.4));
+                // スキル確率判定 (CTが0の時のみ)
+                if(a.curCt === 0 && Math.random() * 100 < a.chance) {
+                    let dmg = Math.floor(a.atk * 3);
+                    t.curHp -= dmg;
+                    a.curCt = a.maxCt; // スキル発動後にCT発生
+                    addLog(`<span style="color:yellow">${a.name}の奥義発動！ ${dmg}ダメージ</span>`);
                 } else {
                     let dmg = Math.max(1, a.atk - (t.def/2));
                     t.curHp -= dmg;
-                    log(`${a.name}の通常攻撃: ${Math.floor(dmg)}点`);
+                    if(a.curCt > 0) a.curCt--; // 通常行動でCT減少
+                    addLog(`${a.name}の攻撃: ${Math.floor(dmg)}点`);
                 }
             } else {
                 let edmg = Math.max(1, a.atk - (t.def/2));
                 t.curHp -= edmg;
-                log(`${a.name}の猛攻！ ${t.name}は${Math.floor(edmg)}点受けた。`);
+                addLog(`敵の反撃：${t.name}に${Math.floor(edmg)}の被害`);
             }
-            
             render();
-            await new Promise(r => setTimeout(r, 150));
-            if(enemy.curHp <= 0 || party.every(p => p.curHp <= 0)) break;
+            await new Promise(r => setTimeout(r, 250));
+            if(!enemy || enemy.curHp <= 0 || party.every(p => p.curHp <= 0)) break;
         }
     }
     
-    if(enemy.curHp <= 0) {
-        log("勝利！次の階層へ進みます...");
-        floor++;
-        document.getElementById('floor-badge').innerText = `F${floor} 0m`;
-        document.getElementById('stage-title').innerText = `世界灯台 ${floor}階`;
-        enemy = null;
-        document.getElementById('enemy-box').style.display = 'none';
-        render();
-    } else {
-        log("全滅しました...");
-        isExploring = false;
-        document.getElementById('start-btn').style.display = 'block';
-    }
+    addLog(enemy && enemy.curHp <= 0 ? "階層踏破！" : "撤退...");
+    document.getElementById('start-btn').style.display = 'block';
 }
 
-document.getElementById('start-btn').onclick = () => {
-    isExploring = true;
-    document.getElementById('start-btn').style.display = 'none';
-    runBattle();
-};
-
+document.getElementById('start-btn').onclick = startExploration;
 render();
 </script>
 </body>

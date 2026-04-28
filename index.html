@@ -9,78 +9,88 @@
         body { background: #000; color: #e0e0e0; font-family: 'Noto Sans JP', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
         #game-container { width: 100%; max-width: 600px; height: 100%; display: grid; grid-template-rows: 50px 1fr 60px; position: relative; }
         
-        /* 操作ガイドラインに基づきスクロールを保証 */
-        header { background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid var(--acc); font-size: 14px; }
-        #view-area { position: relative; overflow-y: auto; background: #000; height: 100%; }
-        nav { background: #1a1a1a; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; height: 60px; }
-        .nav-btn { background: #2a2a2a; color: #fff; border: none; cursor: pointer; font-weight: bold; }
+        header { background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid var(--acc); font-size: 14px; z-index: 100; }
+        #view-area { position: relative; overflow-y: auto; background: #000; height: 100%; -webkit-overflow-scrolling: touch; }
+        
+        /* ナビゲーションを最下部に厳格固定 */
+        nav { background: #1a1a1a; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; height: 60px; border-top: 1px solid #444; z-index: 100; }
+        .nav-btn { background: #2a2a2a; color: #fff; border: none; cursor: pointer; font-weight: bold; font-size: 14px; }
         .nav-btn.active { background: var(--acc); color: #000; }
 
-        .tab-content { display: none; padding: 10px; padding-bottom: 80px; box-sizing: border-box; }
+        .tab-content { display: none; padding: 10px; padding-bottom: 100px; box-sizing: border-box; min-height: 100%; }
         .tab-content.active { display: block; }
 
-        /* 20名リスト: カード形式 */
+        /* キャラリスト */
         .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-        .unit-card { 
-            background: rgba(20,20,20,0.9); border: 1px solid #444; padding: 10px; 
-            font-size: 11px; cursor: pointer; position: relative;
-        }
-        .unit-card.in-party { border-color: var(--acc); background: #1a1500; }
-        .unit-card .id-label { color: var(--acc); font-family: serif; position: absolute; top: 5px; left: 8px; opacity: 0.6; }
-        .unit-card .info-box { margin-top: 12px; border-left: 2px solid var(--acc); padding-left: 6px; }
-        .unit-card .name { font-weight: bold; font-size: 12px; display: block; color: #fff; }
+        .unit-card { background: rgba(30,30,30,0.9); border: 1px solid #444; padding: 10px; font-size: 11px; cursor: pointer; position: relative; }
+        .unit-card.in-party { border-color: var(--acc); background: #252000; }
+        .unit-card .name { font-weight: bold; font-size: 12px; display: block; color: #fff; margin-bottom: 2px; }
         .unit-card .class-name { color: var(--acc); font-size: 10px; }
 
-        /* 編成・探索UI（3+3編成） */
+        /* 編成・探索UI（3+3） */
         #tab-exploring { padding: 0; position: relative; overflow: hidden; }
         .explore-header { position: absolute; top: 0; width: 100%; height: 80px; background: var(--header-blue); display: flex; align-items: center; padding: 0 10px; z-index: 10; }
         .floor-circle { width: 70px; height: 70px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.4); margin-right: 15px; }
-        .floor-circle .m-num { font-size: 26px; font-weight: bold; }
-        #log-window { flex: 1; font-size: 16px; font-weight: bold; color: #fff; }
-
-        .party-container { position: absolute; bottom: 0; width: 100%; height: 45%; background: #000; display: flex; flex-direction: column; gap: 4px; padding: 4px; box-sizing: border-box; }
+        
+        .party-container { position: absolute; bottom: 0; width: 100%; height: 45%; background: #000; display: flex; flex-direction: column; gap: 4px; padding: 4px; box-sizing: border-box; border-top: 1px solid #333; }
         .unit-row { display: flex; justify-content: center; gap: 4px; flex: 1; }
         .unit-mini-card { flex: 1; max-width: 110px; background: var(--panel); border: 1px solid #004488; display: flex; flex-direction: column; overflow: hidden; }
         .unit-mini-card.empty { background: rgba(255,255,255,0.05); border: 1px dashed #333; }
-        .unit-mini-card .name-tag { background: #003366; font-size: 10px; text-align: center; padding: 2px; height: 14px; white-space: nowrap; overflow: hidden; }
+        .unit-mini-card .name-tag { background: #003366; font-size: 10px; text-align: center; padding: 2px; height: 14px; overflow: hidden; white-space: nowrap; }
         .unit-mini-card img { width: 100%; height: 50px; object-fit: cover; }
-        .unit-mini-card .hp-val { font-size: 9px; text-align: right; padding-right: 2px; font-family: monospace; }
-        .unit-mini-card .hp-bar-bg { background: #111; height: 6px; margin: 1px 3px 3px; border: 1px solid #333; }
-        .unit-mini-card .hp-bar-fill { height: 100%; background: var(--hp-fill); transition: width 0.3s; }
+        .unit-mini-card .hp-bar-bg { background: #111; height: 6px; margin: 2px 4px; border: 1px solid #333; }
+        .unit-mini-card .hp-bar-fill { height: 100%; background: var(--hp-fill); }
 
-        .choice-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .choice-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 200; }
     </style>
 </head>
 <body>
 <div id="game-container">
-    <header id="base-header"><div>Gold: <span id="gold-val">0</span></div><div>Babel HQ</div></header>
+    <header id="base-header">
+        <div id="gold-display">Gold: 10,000</div>
+        <div>Babel HQ</div>
+    </header>
+
     <main id="view-area">
         <section id="tab-roster" class="tab-content active">
             <h3 style="color:var(--acc);">解放の騎士団 (20名)</h3>
             <div class="roster-grid" id="roster-list"></div>
         </section>
+
         <section id="tab-party" class="tab-content">
-            <h3 style="color:var(--acc);">部隊編成 (前列3名・後列3名)</h3>
-            <div id="party-edit-view" class="party-container" style="position:relative; height:320px; border:1px dashed var(--acc); margin-bottom:20px;"></div>
+            <h3 style="color:var(--acc);">部隊編成 (前列3・後列3)</h3>
+            <p style="font-size:12px; margin-bottom:10px;">「騎士団」タブでキャラを選んで入れ替えてください</p>
+            <div id="party-edit-view" class="party-container" style="position:relative; height:320px; border:1px dashed var(--acc);"></div>
         </section>
-        <section id="tab-dungeon" class="tab-content" style="display:flex; align-items:center; justify-content:center;">
-            <button class="nav-btn" style="width:80%; padding:30px; font-size:20px; border:1px solid var(--acc);" onclick="startExpedition()">探索開始</button>
+
+        <section id="tab-dungeon" class="tab-content" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <button class="nav-btn" style="width:80%; height:100px; font-size:24px; border:2px solid var(--acc);" onclick="startExpedition()">探索開始</button>
         </section>
+
         <section id="tab-exploring" class="tab-content">
-            <div class="explore-header"><div class="floor-circle"><span id="txt-meter-cur" class="m-num">0m</span></div><div id="log-window"></div></div>
-            <div id="visual-area" style="height:55%; display:flex; align-items:center; justify-content:center;"><img id="enemy-img" style="display:none; max-width:70%;"></div>
+            <div class="explore-header">
+                <div class="floor-circle"><span id="txt-meter-cur" style="font-size:26px; font-weight:bold;">0m</span></div>
+                <div id="log-window" style="font-size:16px; font-weight:bold;">探索中...</div>
+            </div>
+            <div id="visual-area" style="height:55%; display:flex; align-items:center; justify-content:center;">
+                <img id="enemy-img" style="display:none; max-width:70%;">
+            </div>
             <div class="party-container" id="battle-party-area"></div>
-            <div id="branch-choice" class="choice-overlay"><h2>探索完了</h2><button class="nav-btn" onclick="handleChoice(false)" style="padding:15px 40px;">帰還</button></div>
+            <div id="branch-choice" class="choice-overlay">
+                <h2>探索終了</h2>
+                <button class="nav-btn" onclick="handleChoice()" style="padding:15px 50px; font-size:18px;">帰還</button>
+            </div>
         </section>
     </main>
+
     <nav id="base-nav">
         <button id="nav-roster" class="nav-btn active" onclick="showTab('roster')">騎士団</button>
         <button id="nav-party" class="nav-btn" onclick="showTab('party')">編成</button>
         <button id="nav-dungeon" class="nav-btn" onclick="showTab('dungeon')">探索</button>
     </nav>
 </div>
+
 <script>
-// 画像に基づいた全20名の完全定義
 const ROSTER_DATA = [
     {id:1, n:"断鎖のグラディウス", c:"パラディン", hp:2500n}, {id:2, n:"蒼雷のヴァレリア", c:"ソードマスター", hp:2200n},
     {id:3, n:"灰燼のバルド", c:"バーサーカー", hp:2800n}, {id:4, n:"白刃のセレネ", c:"デュアルブレイド", hp:1900n},
@@ -92,19 +102,17 @@ const ROSTER_DATA = [
     {id:15, n:"夜喰いのゼイン", c:"ダークナイト", hp:2400n}, {id:16, n:"血契のイザナ", c:"ブラッドナイト", hp:2150n},
     {id:17, n:"機装のギル", c:"ガンナー", hp:2600n}, {id:18, n:"時渡りのクロノ", c:"タイムメイジ", hp:1800n},
     {id:19, n:"竜憑きのフィオナ", c:"ドラグーン", hp:2450n}, {id:20, n:"零界のアベル", c:"イレイザー", hp:2300n}
-].map(u => ({...u, max: u.hp, lv: 1}));
+].map(u => ({...u, max: u.hp}));
 
-let party = [1, 2, 3, 4, 5, 6]; // 3+3の6人編成
-let gold = 10000n, isExp = false, meter = 0;
+let party = [1, 2, 3, 4, 5, 6]; 
+let isExp = false, meter = 0;
 
 function renderRoster() {
     const list = document.getElementById('roster-list');
     list.innerHTML = ROSTER_DATA.map(u => `
         <div class="unit-card ${party.includes(u.id)?'in-party':''}" onclick="toggleParty(${u.id})">
-            <span class="id-label">${String(u.id).padStart(2,'0')}</span>
-            <div class="info-box"><span class="name">${u.n}</span><span class="class-name">${u.c}</span><br>Lv.${u.lv}</div>
+            <span class="name">${u.n}</span><span class="class-name">${u.c}</span>
         </div>`).join('');
-    document.getElementById('gold-val').innerText = gold.toLocaleString();
 }
 
 function toggleParty(id) {
@@ -119,11 +127,10 @@ function renderParty(tid) {
     const mCard = (id) => {
         const u = ROSTER_DATA.find(x => x.id === id);
         if(!u) return `<div class="unit-mini-card empty"></div>`;
-        const shortName = u.n.split('の')[1] || u.n;
         return `<div class="unit-mini-card">
-            <div class="name-tag">${shortName}</div><img src="No.${u.id}.png" onerror="this.src='https://via.placeholder.com/60?text=U'">
-            <div class="hp-val">${u.hp}/${u.max}</div>
-            <div class="hp-bar-bg"><div class="hp-bar-fill" style="width:${Number(u.hp*100n/u.max)}%"></div></div>
+            <div class="name-tag">${u.n.split('の')[1] || u.n}</div>
+            <img src="No.${u.id}.png" onerror="this.src='https://via.placeholder.com/60?text=UNIT'">
+            <div class="hp-bar-bg"><div class="hp-bar-fill" style="width:100%"></div></div>
         </div>`;
     };
     area.innerHTML = `<div class="unit-row">${mCard(row1[0])}${mCard(row1[1])}${mCard(row1[2])}</div>
@@ -135,7 +142,9 @@ function showTab(id) {
     document.querySelectorAll('.tab-content, .nav-btn').forEach(x => x.classList.remove('active'));
     document.getElementById(`tab-${id}`).classList.add('active');
     document.getElementById(`nav-${id}`).classList.add('active');
-    if(id==='roster') renderRoster(); if(id==='party') renderParty('party-edit-view');
+    if(id==='roster') renderRoster();
+    if(id==='party') renderParty('party-edit-view');
+    document.getElementById('view-area').scrollTop = 0;
 }
 
 function startExpedition() {
@@ -150,25 +159,19 @@ function startExpedition() {
 async function loop() {
     while(isExp) {
         meter++; document.getElementById('txt-meter-cur').innerText = `${meter}m`;
-        if(Math.random()<0.1) {
-            document.getElementById('enemy-img').style.display='block';
-            document.getElementById('log-window').innerText = "敵が出現！";
-            await new Promise(r=>setTimeout(r,800));
-            document.getElementById('enemy-img').style.display='none';
-            document.getElementById('log-window').innerText = "撃破！";
-        }
-        await new Promise(res => setTimeout(res, 400));
-        if(meter >= 20) { document.getElementById('branch-choice').style.display='flex'; return; }
+        await new Promise(res => setTimeout(res, 500));
+        if(meter >= 10) { document.getElementById('branch-choice').style.display='flex'; return; }
     }
 }
 
-function handleChoice(p) {
+function handleChoice() {
     isExp = false; document.getElementById('branch-choice').style.display='none';
     document.getElementById('base-header').style.display='flex';
     document.getElementById('base-nav').style.display='grid';
     document.getElementById('game-container').style.gridTemplateRows='50px 1fr 60px';
     showTab('roster');
 }
+
 renderRoster();
 </script>
 </body>

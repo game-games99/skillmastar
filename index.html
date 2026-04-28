@@ -9,23 +9,29 @@
         body { background: #000; color: #e0e0e0; font-family: 'Noto Sans JP', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
         #game-container { width: 100%; max-width: 600px; height: 100%; display: grid; grid-template-rows: 50px 1fr 60px; position: relative; }
         
+        /* 操作ガイドラインに基づきスクロールを保証 */
         header { background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid var(--acc); font-size: 14px; }
-        #view-area { position: relative; overflow-y: auto; background: #000; height: 100%; -webkit-overflow-scrolling: touch; }
+        #view-area { position: relative; overflow-y: auto; background: #000; height: 100%; }
         nav { background: #1a1a1a; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; height: 60px; }
         .nav-btn { background: #2a2a2a; color: #fff; border: none; cursor: pointer; font-weight: bold; }
         .nav-btn.active { background: var(--acc); color: #000; }
 
-        .tab-content { display: none; padding: 10px; min-height: 100.1%; box-sizing: border-box; }
+        .tab-content { display: none; padding: 10px; padding-bottom: 80px; box-sizing: border-box; }
         .tab-content.active { display: block; }
 
-        /* リスト・編成UI */
-        .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; padding-bottom: 20px; }
-        .unit-card { background: #111; border: 1px solid #444; padding: 8px; font-size: 11px; cursor: pointer; }
+        /* 20名リスト: カード形式 */
+        .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+        .unit-card { 
+            background: rgba(20,20,20,0.9); border: 1px solid #444; padding: 10px; 
+            font-size: 11px; cursor: pointer; position: relative;
+        }
         .unit-card.in-party { border-color: var(--acc); background: #1a1500; }
-        .unit-card .name { font-weight: bold; display: block; color: #fff; }
-        .unit-card .class-name { color: var(--acc); }
+        .unit-card .id-label { color: var(--acc); font-family: serif; position: absolute; top: 5px; left: 8px; opacity: 0.6; }
+        .unit-card .info-box { margin-top: 12px; border-left: 2px solid var(--acc); padding-left: 6px; }
+        .unit-card .name { font-weight: bold; font-size: 12px; display: block; color: #fff; }
+        .unit-card .class-name { color: var(--acc); font-size: 10px; }
 
-        /* 探索UI（3+3編成） */
+        /* 編成・探索UI（3+3編成） */
         #tab-exploring { padding: 0; position: relative; overflow: hidden; }
         .explore-header { position: absolute; top: 0; width: 100%; height: 80px; background: var(--header-blue); display: flex; align-items: center; padding: 0 10px; z-index: 10; }
         .floor-circle { width: 70px; height: 70px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.4); margin-right: 15px; }
@@ -34,13 +40,13 @@
 
         .party-container { position: absolute; bottom: 0; width: 100%; height: 45%; background: #000; display: flex; flex-direction: column; gap: 4px; padding: 4px; box-sizing: border-box; }
         .unit-row { display: flex; justify-content: center; gap: 4px; flex: 1; }
-        .unit-mini-card { flex: 1; max-width: 110px; background: var(--panel); border: 1px solid #004488; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .unit-mini-card { flex: 1; max-width: 110px; background: var(--panel); border: 1px solid #004488; display: flex; flex-direction: column; overflow: hidden; }
         .unit-mini-card.empty { background: rgba(255,255,255,0.05); border: 1px dashed #333; }
-        .unit-mini-card .name-tag { background: #003366; font-size: 10px; text-align: center; padding: 2px; height: 14px; overflow: hidden; }
+        .unit-mini-card .name-tag { background: #003366; font-size: 10px; text-align: center; padding: 2px; height: 14px; white-space: nowrap; overflow: hidden; }
         .unit-mini-card img { width: 100%; height: 50px; object-fit: cover; }
-        .unit-mini-card .hp-val { font-size: 9px; text-align: right; padding-right: 2px; }
+        .unit-mini-card .hp-val { font-size: 9px; text-align: right; padding-right: 2px; font-family: monospace; }
         .unit-mini-card .hp-bar-bg { background: #111; height: 6px; margin: 1px 3px 3px; border: 1px solid #333; }
-        .unit-mini-card .hp-bar-fill { height: 100%; background: var(--hp-fill); }
+        .unit-mini-card .hp-bar-fill { height: 100%; background: var(--hp-fill); transition: width 0.3s; }
 
         .choice-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
     </style>
@@ -54,18 +60,17 @@
             <div class="roster-grid" id="roster-list"></div>
         </section>
         <section id="tab-party" class="tab-content">
-            <h3 style="color:var(--acc);">部隊編成 (前後列6名)</h3>
-            <p style="font-size:12px;">リストから選択して入替</p>
-            <div id="party-edit-view" class="party-container" style="position:relative; height:320px; border:1px dashed var(--acc); margin-bottom:50px;"></div>
+            <h3 style="color:var(--acc);">部隊編成 (前列3名・後列3名)</h3>
+            <div id="party-edit-view" class="party-container" style="position:relative; height:320px; border:1px dashed var(--acc); margin-bottom:20px;"></div>
         </section>
         <section id="tab-dungeon" class="tab-content" style="display:flex; align-items:center; justify-content:center;">
-            <button class="nav-btn" style="width:80%; padding:30px; font-size:20px;" onclick="startExpedition()">探索開始</button>
+            <button class="nav-btn" style="width:80%; padding:30px; font-size:20px; border:1px solid var(--acc);" onclick="startExpedition()">探索開始</button>
         </section>
         <section id="tab-exploring" class="tab-content">
             <div class="explore-header"><div class="floor-circle"><span id="txt-meter-cur" class="m-num">0m</span></div><div id="log-window"></div></div>
             <div id="visual-area" style="height:55%; display:flex; align-items:center; justify-content:center;"><img id="enemy-img" style="display:none; max-width:70%;"></div>
             <div class="party-container" id="battle-party-area"></div>
-            <div id="branch-choice" class="choice-overlay"><h2>探索完了</h2><div id="result-gold"></div><button class="nav-btn" onclick="handleChoice(false)" style="padding:15px 40px; margin-top:20px;">帰還</button></div>
+            <div id="branch-choice" class="choice-overlay"><h2>探索完了</h2><button class="nav-btn" onclick="handleChoice(false)" style="padding:15px 40px;">帰還</button></div>
         </section>
     </main>
     <nav id="base-nav">
@@ -75,25 +80,29 @@
     </nav>
 </div>
 <script>
+// 画像に基づいた全20名の完全定義
 const ROSTER_DATA = [
-    {id:1, n:"グラディウス", c:"パラディン", hp:2500n, max:2500n}, {id:2, n:"ヴァレリア", c:"ソードマスター", hp:2200n, max:2200n},
-    {id:3, n:"バルド", c:"バーサーカー", hp:2800n, max:2800n}, {id:4, n:"セレネ", c:"デュアルブレイド", hp:1900n, max:1900n},
-    {id:5, n:"レイス", c:"シーフ", hp:1800n, max:1800n}, {id:6, n:"リュカ", c:"アーチャー", hp:2000n, max:2000n},
-    {id:7, n:"アルベルト", c:"デュエリスト", hp:2100n, max:2100n}, {id:8, n:"カエデ", c:"ファイター", hp:2300n, max:2300n},
-    {id:9, n:"ジーク", c:"ウィザード", hp:1700n, max:1700n}, {id:10, n:"エリア", c:"クレリック", hp:1600n, max:1600n},
-    {id:11, n:"ラウル", c:"ソーサラー", hp:1750n, max:1750n}, {id:12, n:"ミラ", c:"サポート", hp:1950n, max:1950n},
-    {id:13, n:"キリガ", c:"アサシン", hp:1850n, max:1850n}, {id:14, n:"リリス", c:"アサシン", hp:1900n, max:1900n},
-    {id:15, n:"ゼイン", hp:2400n, max:2400n}, {id:16, n:"イザナ", hp:2150n, max:2150n},
-    {id:17, n:"ギル", hp:2600n, max:2600n}, {id:18, n:"クロノ", hp:1800n, max:1800n},
-    {id:19, n:"フィオナ", hp:2450n, max:2450n}, {id:20, n:"アベル", hp:2300n, max:2300n}
-];
-let party = [1, 2, 3, 4, 5, 6]; 
+    {id:1, n:"断鎖のグラディウス", c:"パラディン", hp:2500n}, {id:2, n:"蒼雷のヴァレリア", c:"ソードマスター", hp:2200n},
+    {id:3, n:"灰燼のバルド", c:"バーサーカー", hp:2800n}, {id:4, n:"白刃のセレネ", c:"デュアルブレイド", hp:1900n},
+    {id:5, n:"影縫いのレイス", c:"シーフ", hp:1800n}, {id:6, n:"翠弓のリュカ", c:"アーチャー", hp:2000n},
+    {id:7, n:"残光のアルベルト", c:"デュエリスト", hp:2100n}, {id:8, n:"紅蓮舞のカエデ", c:"ファイター", hp:2300n},
+    {id:9, n:"虚空詠みのジーク", c:"ウィザード", hp:1700n}, {id:10, n:"星祈りのエリア", c:"クレリック", hp:1600n},
+    {id:11, n:"禁書のラウル", c:"ソーサラー", hp:1750n}, {id:12, n:"幻晶のミラ", c:"サポート", hp:1950n},
+    {id:13, n:"無音のキリガ", c:"アサシン", hp:1850n}, {id:14, n:"毒華のリリス", c:"アサシン", hp:1900n},
+    {id:15, n:"夜喰いのゼイン", c:"ダークナイト", hp:2400n}, {id:16, n:"血契のイザナ", c:"ブラッドナイト", hp:2150n},
+    {id:17, n:"機装のギル", c:"ガンナー", hp:2600n}, {id:18, n:"時渡りのクロノ", c:"タイムメイジ", hp:1800n},
+    {id:19, n:"竜憑きのフィオナ", c:"ドラグーン", hp:2450n}, {id:20, n:"零界のアベル", c:"イレイザー", hp:2300n}
+].map(u => ({...u, max: u.hp, lv: 1}));
+
+let party = [1, 2, 3, 4, 5, 6]; // 3+3の6人編成
 let gold = 10000n, isExp = false, meter = 0;
 
 function renderRoster() {
-    document.getElementById('roster-list').innerHTML = ROSTER_DATA.map(u => `
+    const list = document.getElementById('roster-list');
+    list.innerHTML = ROSTER_DATA.map(u => `
         <div class="unit-card ${party.includes(u.id)?'in-party':''}" onclick="toggleParty(${u.id})">
-            <span class="name">${u.n}</span><span class="class-name">${u.c||'騎士'}</span>
+            <span class="id-label">${String(u.id).padStart(2,'0')}</span>
+            <div class="info-box"><span class="name">${u.n}</span><span class="class-name">${u.c}</span><br>Lv.${u.lv}</div>
         </div>`).join('');
     document.getElementById('gold-val').innerText = gold.toLocaleString();
 }
@@ -110,8 +119,9 @@ function renderParty(tid) {
     const mCard = (id) => {
         const u = ROSTER_DATA.find(x => x.id === id);
         if(!u) return `<div class="unit-mini-card empty"></div>`;
+        const shortName = u.n.split('の')[1] || u.n;
         return `<div class="unit-mini-card">
-            <div class="name-tag">${u.n}</div><img src="No.${u.id}.png" onerror="this.src='https://via.placeholder.com/60?text=U'">
+            <div class="name-tag">${shortName}</div><img src="No.${u.id}.png" onerror="this.src='https://via.placeholder.com/60?text=U'">
             <div class="hp-val">${u.hp}/${u.max}</div>
             <div class="hp-bar-bg"><div class="hp-bar-fill" style="width:${Number(u.hp*100n/u.max)}%"></div></div>
         </div>`;

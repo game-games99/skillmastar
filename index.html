@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BABEL: THE ASCENSION v1.35</title>
+    <title>BABEL: THE ASCENSION v1.36</title>
     <style>
         :root { --bg: #050505; --panel: #111; --acc: #C5A059; --hp: #ff4d4d; --ct: #4da6ff; --msg: #001a33; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'Noto Sans JP', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
@@ -14,64 +14,68 @@
         .nav-btn { background: #333; color: #fff; border: none; cursor: pointer; font-weight: bold; }
         .nav-btn.active { background: var(--acc); color: #000; }
 
-        /* ホーム・編成・詳細UI */
+        /* タブ・カードUI */
         .tab-content { display: none; padding: 10px; }
         .tab-content.active { display: block; }
         .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .unit-card { background: var(--panel); border: 1px solid #444; padding: 10px; border-radius: 4px; }
-        .btn-action { background: #444; color: #fff; border: 1px solid #666; padding: 5px; cursor: pointer; width: 100%; margin-top: 5px; }
+        .unit-card { background: var(--panel); border: 1px solid #444; padding: 10px; border-radius: 4px; position: relative; }
+        .unit-card img { width: 100%; height: 100px; object-fit: cover; border-bottom: 1px solid #333; margin-bottom: 5px; }
+        .row-badge { position: absolute; top: 5px; right: 5px; padding: 2px 5px; font-size: 10px; border-radius: 3px; color: #fff; }
+        .btn-action { background: #444; color: #fff; border: 1px solid #666; padding: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-size: 12px; }
 
-        /* ダンジョンUI */
+        /* ダンジョン内UI */
         #explore-view { position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; }
         #progress-ui { position: absolute; top: 10px; width: 90%; }
-        .bar-bg { background: #333; height: 10px; border-radius: 5px; overflow: hidden; }
+        .bar-bg { background: #333; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid #444; }
         #bar-fill { height: 100%; background: var(--acc); width: 0%; transition: width 0.2s; }
-        #enemy-visual-box { width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; }
-        #enemy-img, #chest-img { max-width: 100%; max-height: 100%; }
-        #log-window { position: absolute; bottom: 0; width: 100%; height: 120px; background: rgba(0,26,51,0.9); font-size: 11px; padding: 5px; overflow-y: auto; color: #fff; }
-        .choice-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; display: none; }
+        #visual-box { width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; position: relative; }
+        #visual-box img { max-width: 100%; max-height: 100%; display: none; }
+        #log-window { position: absolute; bottom: 0; width: 100%; height: 120px; background: rgba(0,26,51,0.9); font-size: 11px; padding: 10px; overflow-y: auto; color: #fff; border-top: 1px solid var(--acc); }
+        .choice-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; display: none; }
     </style>
 </head>
 <body>
 <div id="game-container">
-    <header><div id="gold-display">Gold: 0</div><div id="floor-info">Babel</div></header>
+    <header><div id="gold-display">Gold: 0</div><div id="floor-info">Babel HQ</div></header>
     <main id="view-area">
         <section id="tab-roster" class="tab-content active">
-            <h3>騎士団管理</h3>
+            <h3 style="color:var(--acc);">解放の騎士団</h3>
             <div class="card-grid" id="roster-list"></div>
         </section>
         <section id="tab-party" class="tab-content">
-            <h3>部隊編成 (前衛/後衛 各最大3名)</h3>
-            <div id="party-config" style="margin-bottom:20px;"></div>
+            <h3 style="color:var(--acc);">部隊編成</h3>
+            <p style="font-size:12px;">前衛/後衛 各最大3名 (計5名まで)</p>
+            <div id="party-current" class="card-grid" style="margin-bottom:20px; border: 1px dashed var(--acc); padding: 10px;"></div>
             <div id="bench-list" class="card-grid"></div>
         </section>
         <section id="tab-dungeon" class="tab-content">
-            <h3>塔への進入</h3>
-            <p>開始階層を選択:</p>
-            <input type="number" id="start-floor" value="1" min="1" style="width:60px;"> F
-            <div style="margin-top:20px;">
-                <label><input type="checkbox" id="auto-mode"> オート探索を有効化</label>
+            <h3 style="color:var(--acc);">塔の門</h3>
+            <div class="unit-card" style="margin-bottom: 15px;">
+                開始階層: <input type="number" id="start-floor" value="1" min="1" style="width:60px; background:#222; color:#fff; border:1px solid #666;"> F
+                <div style="margin-top:10px;">
+                    <label style="cursor:pointer;"><input type="checkbox" id="auto-mode"> オート探索を有効化</label>
+                </div>
             </div>
-            <button class="btn-action" style="background:#a20; padding:15px; font-size:18px;" onclick="startExpedition()">探索開始</button>
+            <button class="btn-action" style="background:#a20; padding:15px; font-size:18px; border:2px solid var(--acc);" onclick="startExpedition()">探索開始</button>
         </section>
         <section id="tab-exploring" class="tab-content" style="height:100%; padding:0;">
             <div id="explore-view">
                 <div id="progress-ui">
-                    <div style="display:flex; justify-content:space-between;">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold;">
                         <span id="txt-floor-cur">1F</span> <span id="txt-meter-cur">0m</span>
                     </div>
                     <div class="bar-bg"><div id="bar-fill"></div></div>
                 </div>
-                <div id="enemy-visual-box">
-                    <img id="enemy-img" src="" style="display:none;">
-                    <img id="chest-img" src="" style="display:none;">
+                <div id="visual-box">
+                    <img id="enemy-img" src="">
+                    <img id="chest-img" src="">
                 </div>
-                <div id="enemy-name-label" style="font-weight:bold; color:var(--hp);"></div>
+                <div id="target-label" style="font-weight:bold; color:var(--hp); min-height:1.2em;"></div>
                 <div id="log-window"></div>
                 <div id="branch-choice" class="choice-overlay">
-                    <h2 id="choice-title">50m地点 到着</h2>
-                    <button class="btn-action" style="width:200px; padding:10px;" onclick="handleChoice(true)">さらに奥へ進む</button>
-                    <button class="btn-action" style="width:200px; padding:10px; background:#444;" onclick="handleChoice(false)">拠点へ引き返す</button>
+                    <h2 id="choice-title" style="color:var(--acc);">拠点へ帰還しますか？</h2>
+                    <button class="btn-action" style="width:240px; padding:12px; margin-bottom:10px; background:#a20;" onclick="handleChoice(true)">さらに上層へ進む</button>
+                    <button class="btn-action" style="width:240px; padding:12px; background:#333;" onclick="handleChoice(false)">騎士団本部へ帰還</button>
                 </div>
             </div>
         </section>
@@ -84,169 +88,165 @@
 </div>
 
 <script>
-// キャラデータ (画像参照に基づき全20名定義)
-const ROSTER = [
-    { id:1, name:"グラディウス", hp:500n, atk:25n, def:50n, dex:15n, chance:20, ct:5, row:"front", lv:1 },
-    { id:2, name:"ヴァレリア", hp:320n, atk:48n, def:20n, dex:60n, chance:35, ct:4, row:"front", lv:1 },
-    { id:3, name:"バルド", hp:450n, atk:55n, def:30n, dex:20n, chance:25, ct:6, row:"front", lv:1 },
-    { id:10, name:"エリア", hp:310n, atk:15n, def:20n, dex:30n, chance:20, ct:8, row:"back", lv:1 },
-    { id:20, name:"アベル", hp:350n, atk:65n, def:20n, dex:40n, chance:15, ct:7, row:"back", lv:1 }
-    // ... 他のキャラも同様にスタック
-];
+// 画像情報に基づいた全20キャラの完全定義
+const ROSTER_DATA = [
+    { id:1, name:"グラディウス", as:"不落の守護", ps:"防御の盾", row:"front", hp:500n, atk:25n, def:50n },
+    { id:2, name:"ヴァレリア", as:"迅雷閃", ps:"迅雷の加護", row:"front", hp:320n, atk:48n, def:20n },
+    { id:3, name:"バルド", as:"破壊の斧", ps:"不死の呪い", row:"front", hp:450n, atk:55n, def:30n },
+    { id:4, name:"セレネ", as:"双刃乱舞", ps:"孤高の剣姫", row:"front", hp:300n, atk:52n, def:18n },
+    { id:5, name:"レイス", as:"影縫い", ps:"死角の刺客", row:"front", hp:280n, atk:42n, def:15n },
+    { id:6, name:"リュカ", as:"必中の矢", ps:"森の一体化", row:"back", hp:290n, atk:40n, def:18n },
+    { id:7, name:"アルベルト", as:"残光の剣", ps:"隙を突く剣士", row:"front", hp:340n, atk:46n, def:25n },
+    { id:8, name:"カエデ", as:"紅連舞", ps:"戦場を焦がす", row:"front", hp:380n, atk:50n, def:22n },
+    { id:9, name:"ジーク", as:"虚空詠み", ps:"闇を支配する", row:"back", hp:260n, atk:60n, def:12n },
+    { id:10, name:"エリア", as:"聖祈り", ps:"仲間を癒やす", row:"back", hp:310n, atk:15n, def:20n },
+    { id:11, name:"ラウル", as:"禁書の力", ps:"異端の魔導", row:"back", hp:270n, atk:58n, def:14n },
+    { id:12, name:"ミラ", as:"幻晶の盾", ps:"力を増幅する", row:"back", hp:320n, atk:20n, def:24n },
+    { id:13, name:"キリガ", as:"無音の殺意", ps:"影の処刑人", row:"front", hp:285n, atk:48n, def:16n },
+    { id:14, name:"リリス", as:"毒華の舞", ps:"美しき毒", row:"back", hp:305n, atk:44n, def:18n },
+    { id:15, name:"ゼイン", as:"夜喰い", ps:"夜ごと力を増す", row:"front", hp:360n, atk:54n, def:28n },
+    { id:16, name:"イザナ", as:"血契の牙", ps:"血を糧に", row:"front", hp:410n, atk:56n, def:24n },
+    { id:17, name:"ギル", as:"機装の重砲", ps:"重火器専門", row:"front", hp:550n, atk:35n, def:55n },
+    { id:18, name:"クロノ", as:"時渡り", ps:"未来を切り開く", row:"back", hp:275n, atk:45n, def:15n },
+    { id:19, name:"フィオナ", as:"竜憑き", ps:"竜槍の使い手", row:"front", hp:400n, atk:58n, def:26n },
+    { id:20, name:"アベル", as:"零界の虚", ps:"存在が不安定", row:"back", hp:350n, atk:65n, def:20n }
+].map(c => ({...c, lv:1, exp:0, dex:30n, chance:20, ct:5}));
 
-let gold = 5000n;
-let party = ROSTER.slice(0, 5).map(c => ({...c, curHp: c.hp, curCt: 0}));
+// 状態管理
+let gold = 10000n;
+let activeRoster = [...ROSTER_DATA];
+let currentPartyIds = [1, 2, 3, 10, 20]; // 初期パーティ
 let isExploring = false;
-let currentFloor = 1;
-let currentMeter = 0;
-let stackedGold = 0n;
-let stackedChests = [];
+let floor = 1;
+let meter = 0;
 let autoMode = false;
+let stackedGold = 0n;
 
-function showTab(tabId) {
+// UIレンダリング
+function renderRoster() {
+    const list = document.getElementById('roster-list');
+    list.innerHTML = activeRoster.map(p => `
+        <div class="unit-card">
+            <div class="row-badge" style="background:${p.row==='front'?'#a22':'#22a'}">${p.row.toUpperCase()}</div>
+            <img src="No.${p.id}.png" onerror="this.src='https://via.placeholder.com/100?text=No.${p.id}'">
+            <div style="font-size:11px;"><b>No.${String(p.id).padStart(2,'0')} ${p.name}</b></div>
+            <div style="font-size:10px; color:#aaa;">AS: ${p.as}</div>
+            <div style="font-size:10px;">Lv.${p.lv} | HP:${p.hp} ATK:${p.atk}</div>
+            <button class="btn-action" onclick="lvUp(${p.id})">強化 (${p.lv * 500}G)</button>
+        </div>
+    `).join('');
+    document.getElementById('gold-display').innerText = `Gold: ${gold.toLocaleString()}`;
+}
+
+function lvUp(id) {
+    const p = activeRoster.find(u => u.id === id);
+    const cost = BigInt(p.lv * 500);
+    if (gold >= cost) {
+        gold -= cost; p.lv++; p.hp += 40n; p.atk += 6n; renderRoster();
+    }
+}
+
+function showTab(id) {
     if (isExploring) return;
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`tab-${tabId}`).classList.add('active');
+    document.getElementById(`tab-${id}`).classList.add('active');
     event.currentTarget.classList.add('active');
-    renderRoster();
+    if(id === 'roster') renderRoster();
 }
 
-function renderRoster() {
-    document.getElementById('gold-display').innerText = `Gold: ${gold.toLocaleString()}`;
-    const list = document.getElementById('roster-list');
-    list.innerHTML = party.map((p, i) => `
-        <div class="unit-card">
-            <img src="No.${p.id}.png" style="width:100%; height:80px; object-fit:cover;" onerror="this.src='https://via.placeholder.com/80'">
-            <b>Lv.${p.lv} ${p.name}</b><br>
-            HP: ${p.curHp}/${p.hp}<br>
-            <button class="btn-action" onclick="upgradeUnit(${i})">強化 (${p.lv * 500}G)</button>
-        </div>
-    `).join('');
-}
-
-function upgradeUnit(i) {
-    const p = party[i];
-    const cost = BigInt(p.lv * 500);
-    if (gold >= cost) {
-        gold -= cost;
-        p.lv++; p.hp += 50n; p.atk += 5n; p.curHp = p.hp;
-        renderRoster();
-    }
-}
-
+// 探索ロジック
 async function startExpedition() {
-    currentFloor = parseInt(document.getElementById('start-floor').value);
+    floor = parseInt(document.getElementById('start-floor').value);
     autoMode = document.getElementById('auto-mode').checked;
-    isExploring = true;
-    currentMeter = 0;
-    stackedGold = 0n;
-    stackedChests = [];
-    party.forEach(p => p.curHp = p.hp);
-    
+    isExploring = true; meter = 0; stackedGold = 0n;
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-exploring').classList.add('active');
-    
-    runLoop();
+    log(`${floor}F 探索開始...`);
+    loop();
 }
 
-async function runLoop() {
-    while (isExploring && party.some(p => p.curHp > 0)) {
-        currentMeter++;
-        renderExplore();
+async function loop() {
+    while(isExploring) {
+        meter++;
+        renderExploreUI();
         
-        // 50m地点の判定
-        if (currentMeter === 50 && !autoMode) {
-            showChoice("50m地点 到着: 帰還しますか？");
-            return; // handleChoiceを待つ
+        // 50m地点
+        if(meter === 50 && !autoMode) {
+            document.getElementById('branch-choice').style.display = 'flex';
+            return; 
         }
-
-        // 100m地点（ボス戦）
-        if (currentMeter >= 100) {
-            await doBattle(true);
-            if (!isExploring) return;
-            showChoice(`${currentFloor}F クリア！進みますか？`, true);
+        
+        // 100m地点
+        if(meter >= 100) {
+            await encounter(true); // ボス
+            if(!isExploring) return;
+            document.getElementById('choice-title').innerText = `${floor}F 踏破！さらに進みますか？`;
+            document.getElementById('branch-choice').style.display = 'flex';
             return;
         }
 
-        // ランダムイベント（50m以降も発生）
+        // 50m以降も継続するランダムイベント
         const r = Math.random();
-        if (r < 0.08) await doBattle(false);
-        else if (r < 0.12) await findChest();
-        else if (r < 0.14) triggerTrap();
+        if(r < 0.1) await encounter(false);
+        else if(r < 0.15) findChest();
+        else if(r < 0.17) triggerTrap();
 
-        await new Promise(r => setTimeout(r, 150));
+        await new Promise(res => setTimeout(res, 150));
     }
-
-    if (party.every(p => p.curHp <= 0)) {
-        log("全滅しました... 獲得物はすべて失われました。");
-        isExploring = false;
-        stackedGold = 0n;
-        stackedChests = [];
-        setTimeout(() => showTab('dungeon'), 2000);
-    }
-}
-
-function showChoice(title, isEnd = false) {
-    const overlay = document.getElementById('branch-choice');
-    document.getElementById('choice-title').innerText = title;
-    overlay.style.display = 'flex';
 }
 
 function handleChoice(proceed) {
     document.getElementById('branch-choice').style.display = 'none';
-    if (proceed) {
-        if (currentMeter >= 100) { currentFloor++; currentMeter = 0; }
-        runLoop();
+    if(proceed) {
+        if(meter >= 100) { floor++; meter = 0; }
+        loop();
     } else {
-        isExploring = false;
-        gold += stackedGold;
-        log(`拠点に帰還。${stackedGold}Gと${stackedChests.length}個の宝箱を持ち帰りました。`);
+        isExploring = false; gold += stackedGold;
+        log(`拠点へ帰還。獲得ゴールド: ${stackedGold}`);
         showTab('roster');
     }
 }
 
-async function doBattle(isBoss) {
-    const e = { name: isBoss ? "階層守護者" : "モンスター", hp: BigInt(currentFloor * (isBoss ? 5000 : 800)) };
-    document.getElementById('enemy-name-label').innerText = e.name;
+async function encounter(isBoss) {
+    const eName = isBoss ? "階層守護者" : "魔物";
+    document.getElementById('target-label').innerText = eName;
     document.getElementById('enemy-img').style.display = 'block';
+    document.getElementById('enemy-img').src = isBoss ? "boss.png" : "mob.png";
     
-    let ehp = e.hp;
-    while(ehp > 0 && party.some(p => p.curHp > 0)) {
-        party.forEach(p => { if(p.curHp > 0) ehp -= p.atk; });
-        if(ehp > 0) party[0].curHp -= BigInt(currentFloor * 10); // ヘイト簡易版
-        renderExplore();
-        await new Promise(r => setTimeout(r, 200));
-    }
+    log(`${eName}が出現！`);
+    await new Promise(res => setTimeout(res, 800)); // 戦闘演出
+    
+    const winGold = BigInt(floor * (isBoss ? 1000 : 150));
+    stackedGold += winGold;
+    log(`${winGold}Gをスタック。`);
+    
     document.getElementById('enemy-img').style.display = 'none';
-    document.getElementById('enemy-name-label').innerText = "";
-    if (ehp <= 0) stackedGold += BigInt(currentFloor * 100);
+    document.getElementById('target-label').innerText = "";
 }
 
-async function findChest() {
-    const chestImg = document.getElementById('chest-img');
-    chestImg.style.display = 'block';
-    log("宝箱を発見！スタックに追加。");
-    stackedChests.push({ quality: Math.random() });
-    await new Promise(r => setTimeout(r, 500));
-    chestImg.style.display = 'none';
+function findChest() {
+    log("宝箱を発見！");
+    stackedGold += BigInt(floor * 50);
 }
 
 function triggerTrap() {
-    log("トラップ作動！パーティにダメージ。");
-    party.forEach(p => p.curHp -= p.hp / 10n);
+    log("罠にかかった！スタックゴールドが一部減少。");
+    stackedGold = stackedGold * 8n / 10n;
 }
 
-function renderExplore() {
-    document.getElementById('txt-floor-cur').innerText = `${currentFloor}F`;
-    document.getElementById('txt-meter-cur').innerText = `${currentMeter}m`;
-    document.getElementById('bar-fill').style.width = `${currentMeter}%`;
+function renderExploreUI() {
+    document.getElementById('txt-floor-cur').innerText = `${floor}F`;
+    document.getElementById('txt-meter-cur').innerText = `${meter}m`;
+    document.getElementById('bar-fill').style.width = `${meter}%`;
 }
 
 function log(m) {
-    const win = document.getElementById('log-window');
-    win.innerHTML = `> ${m}<br>${win.innerHTML}`;
+    const w = document.getElementById('log-window');
+    w.innerHTML = `> ${m}<br>${w.innerHTML}`;
 }
+
+renderRoster();
 </script>
 </body>
 </html>

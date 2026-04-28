@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BABEL: THE ASCENSION v1.36</title>
+    <title>BABEL: THE ASCENSION v1.36 (Revised)</title>
     <style>
         :root { --bg: #050505; --panel: #111; --acc: #C5A059; --hp: #ff4d4d; --ct: #4da6ff; --msg: #001a33; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'Noto Sans JP', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
@@ -17,10 +17,16 @@
         /* タブ・カードUI */
         .tab-content { display: none; padding: 10px; }
         .tab-content.active { display: block; }
+        
+        /* 騎士団リスト（軽量化：テキストベース） */
+        .unit-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        .unit-table th { background: #222; color: var(--acc); padding: 8px; text-align: left; cursor: pointer; border-bottom: 1px solid #444; }
+        .unit-table td { padding: 8px; border-bottom: 1px solid #222; }
+
+        /* 編成中カード */
         .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .unit-card { background: var(--panel); border: 1px solid #444; padding: 10px; border-radius: 4px; position: relative; }
         .unit-card img { width: 100%; height: 100px; object-fit: cover; border-bottom: 1px solid #333; margin-bottom: 5px; }
-        .row-badge { position: absolute; top: 5px; right: 5px; padding: 2px 5px; font-size: 10px; border-radius: 3px; color: #fff; }
         .btn-action { background: #444; color: #fff; border: 1px solid #666; padding: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-size: 12px; }
 
         /* ダンジョン内UI */
@@ -30,7 +36,10 @@
         #bar-fill { height: 100%; background: var(--acc); width: 0%; transition: width 0.2s; }
         #visual-box { width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; position: relative; }
         #visual-box img { max-width: 100%; max-height: 100%; display: none; }
-        #log-window { position: absolute; bottom: 0; width: 100%; height: 120px; background: rgba(0,26,51,0.9); font-size: 11px; padding: 10px; overflow-y: auto; color: #fff; border-top: 1px solid var(--acc); }
+        
+        /* 1行上書きログ */
+        #log-window { position: absolute; bottom: 0; width: 100%; height: 50px; background: rgba(0,26,51,0.9); font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; color: #fff; border-top: 1px solid var(--acc); }
+        
         .choice-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; display: none; }
     </style>
 </head>
@@ -40,24 +49,29 @@
     <main id="view-area">
         <section id="tab-roster" class="tab-content active">
             <h3 style="color:var(--acc);">解放の騎士団</h3>
-            <div class="card-grid" id="roster-list"></div>
+            <table class="unit-table">
+                <thead>
+                    <tr>
+                        <th onclick="sortRoster('hp')">HP</th>
+                        <th onclick="sortRoster('atk')">攻撃</th>
+                        <th onclick="sortRoster('dex')">技量</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody id="roster-list-body"></tbody>
+            </table>
         </section>
+
         <section id="tab-party" class="tab-content">
             <h3 style="color:var(--acc);">部隊編成</h3>
-            <p style="font-size:12px;">前衛/後衛 各最大3名 (計5名まで)</p>
             <div id="party-current" class="card-grid" style="margin-bottom:20px; border: 1px dashed var(--acc); padding: 10px;"></div>
-            <div id="bench-list" class="card-grid"></div>
         </section>
+
         <section id="tab-dungeon" class="tab-content">
             <h3 style="color:var(--acc);">塔の門</h3>
-            <div class="unit-card" style="margin-bottom: 15px;">
-                開始階層: <input type="number" id="start-floor" value="1" min="1" style="width:60px; background:#222; color:#fff; border:1px solid #666;"> F
-                <div style="margin-top:10px;">
-                    <label style="cursor:pointer;"><input type="checkbox" id="auto-mode"> オート探索を有効化</label>
-                </div>
-            </div>
             <button class="btn-action" style="background:#a20; padding:15px; font-size:18px; border:2px solid var(--acc);" onclick="startExpedition()">探索開始</button>
         </section>
+
         <section id="tab-exploring" class="tab-content" style="height:100%; padding:0;">
             <div id="explore-view">
                 <div id="progress-ui">
@@ -71,79 +85,86 @@
                     <img id="chest-img" src="">
                 </div>
                 <div id="target-label" style="font-weight:bold; color:var(--hp); min-height:1.2em;"></div>
-                <div id="log-window"></div>
+                <div id="log-window">探索待機中...</div>
                 <div id="branch-choice" class="choice-overlay">
-                    <h2 id="choice-title" style="color:var(--acc);">拠点へ帰還しますか？</h2>
-                    <button class="btn-action" style="width:240px; padding:12px; margin-bottom:10px; background:#a20;" onclick="handleChoice(true)">さらに上層へ進む</button>
-                    <button class="btn-action" style="width:240px; padding:12px; background:#333;" onclick="handleChoice(false)">騎士団本部へ帰還</button>
+                    <h2 id="choice-title" style="color:var(--acc);">帰還しますか？</h2>
+                    <button class="btn-action" style="width:240px; padding:12px; margin-bottom:10px; background:#a20;" onclick="handleChoice(true)">さらに進む</button>
+                    <button class="btn-action" style="width:240px; padding:12px; background:#333;" onclick="handleChoice(false)">帰還</button>
                 </div>
             </div>
         </section>
     </main>
     <nav>
-        <button class="nav-btn active" onclick="showTab('roster')">騎士団</button>
-        <button class="nav-btn" onclick="showTab('party')">編成</button>
-        <button class="nav-btn" onclick="showTab('dungeon')">探索</button>
+        <button id="nav-roster" class="nav-btn active" onclick="showTab('roster')">騎士団</button>
+        <button id="nav-party" class="nav-btn" onclick="showTab('party')">編成</button>
+        <button id="nav-dungeon" class="nav-btn" onclick="showTab('dungeon')">探索</button>
     </nav>
 </div>
 
 <script>
-// 画像情報に基づいた全20キャラの完全定義
+// 全20キャラ定義（技量dexを含む）
 const ROSTER_DATA = [
-    { id:1, name:"グラディウス", as:"不落の守護", ps:"防御の盾", row:"front", hp:500n, atk:25n, def:50n },
-    { id:2, name:"ヴァレリア", as:"迅雷閃", ps:"迅雷の加護", row:"front", hp:320n, atk:48n, def:20n },
-    { id:3, name:"バルド", as:"破壊の斧", ps:"不死の呪い", row:"front", hp:450n, atk:55n, def:30n },
-    { id:4, name:"セレネ", as:"双刃乱舞", ps:"孤高の剣姫", row:"front", hp:300n, atk:52n, def:18n },
-    { id:5, name:"レイス", as:"影縫い", ps:"死角の刺客", row:"front", hp:280n, atk:42n, def:15n },
-    { id:6, name:"リュカ", as:"必中の矢", ps:"森の一体化", row:"back", hp:290n, atk:40n, def:18n },
-    { id:7, name:"アルベルト", as:"残光の剣", ps:"隙を突く剣士", row:"front", hp:340n, atk:46n, def:25n },
-    { id:8, name:"カエデ", as:"紅連舞", ps:"戦場を焦がす", row:"front", hp:380n, atk:50n, def:22n },
-    { id:9, name:"ジーク", as:"虚空詠み", ps:"闇を支配する", row:"back", hp:260n, atk:60n, def:12n },
-    { id:10, name:"エリア", as:"聖祈り", ps:"仲間を癒やす", row:"back", hp:310n, atk:15n, def:20n },
-    { id:11, name:"ラウル", as:"禁書の力", ps:"異端の魔導", row:"back", hp:270n, atk:58n, def:14n },
-    { id:12, name:"ミラ", as:"幻晶の盾", ps:"力を増幅する", row:"back", hp:320n, atk:20n, def:24n },
-    { id:13, name:"キリガ", as:"無音の殺意", ps:"影の処刑人", row:"front", hp:285n, atk:48n, def:16n },
-    { id:14, name:"リリス", as:"毒華の舞", ps:"美しき毒", row:"back", hp:305n, atk:44n, def:18n },
-    { id:15, name:"ゼイン", as:"夜喰い", ps:"夜ごと力を増す", row:"front", hp:360n, atk:54n, def:28n },
-    { id:16, name:"イザナ", as:"血契の牙", ps:"血を糧に", row:"front", hp:410n, atk:56n, def:24n },
-    { id:17, name:"ギル", as:"機装の重砲", ps:"重火器専門", row:"front", hp:550n, atk:35n, def:55n },
-    { id:18, name:"クロノ", as:"時渡り", ps:"未来を切り開く", row:"back", hp:275n, atk:45n, def:15n },
-    { id:19, name:"フィオナ", as:"竜憑き", ps:"竜槍の使い手", row:"front", hp:400n, atk:58n, def:26n },
-    { id:20, name:"アベル", as:"零界の虚", ps:"存在が不安定", row:"back", hp:350n, atk:65n, def:20n }
-].map(c => ({...c, lv:1, exp:0, dex:30n, chance:20, ct:5}));
+    { id:1, name:"グラディウス", row:"front", hp:500n, atk:25n, def:50n, dex:30n },
+    { id:2, name:"ヴァレリア", row:"front", hp:320n, atk:48n, def:20n, dex:65n },
+    { id:3, name:"バルド", row:"front", hp:450n, atk:55n, def:30n, dex:25n },
+    { id:4, name:"セレネ", row:"front", hp:300n, atk:52n, def:18n, dex:75n },
+    { id:5, name:"レイス", row:"front", hp:280n, atk:42n, def:15n, dex:85n },
+    { id:6, name:"リュカ", row:"back", hp:290n, atk:40n, def:18n, dex:70n },
+    { id:7, name:"アルベルト", row:"front", hp:340n, atk:46n, def:25n, dex:40n },
+    { id:8, name:"カエデ", row:"front", hp:380n, atk:50n, def:22n, dex:35n },
+    { id:9, name:"ジーク", row:"back", hp:260n, atk:60n, def:12n, dex:55n },
+    { id:10, name:"エリア", row:"back", hp:310n, atk:15n, def:20n, dex:45n },
+    { id:11, name:"ラウル", row:"back", hp:270n, atk:58n, def:14n, dex:50n },
+    { id:12, name:"ミラ", row:"back", hp:320n, atk:20n, def:24n, dex:40n },
+    { id:13, name:"キリガ", row:"front", hp:285n, atk:48n, def:16n, dex:90n },
+    { id:14, name:"リリス", row:"back", hp:305n, atk:44n, def:18n, dex:60n },
+    { id:15, name:"ゼイン", row:"front", hp:360n, atk:54n, def:28n, dex:45n },
+    { id:16, name:"イザナ", row:"front", hp:410n, atk:56n, def:24n, dex:50n },
+    { id:17, name:"ギル", row:"front", hp:550n, atk:35n, def:55n, dex:15n },
+    { id:18, name:"クロノ", row:"back", hp:275n, atk:45n, def:15n, dex:80n },
+    { id:19, name:"フィオナ", row:"front", hp:400n, atk:58n, def:26n, dex:55n },
+    { id:20, name:"アベル", row:"back", hp:350n, atk:65n, def:20n, dex:50n }
+].map(c => ({...c, lv:1}));
 
-// 状態管理
 let gold = 10000n;
 let activeRoster = [...ROSTER_DATA];
-let currentPartyIds = [1, 2, 3, 10, 20]; // 初期パーティ
+let currentPartyIds = [1, 2, 4, 5, 13]; 
 let isExploring = false;
 let floor = 1;
 let meter = 0;
-let autoMode = false;
 let stackedGold = 0n;
 
-// UIレンダリング
+// 騎士団リスト（画像なしテキスト）
 function renderRoster() {
-    const list = document.getElementById('roster-list');
-    list.innerHTML = activeRoster.map(p => `
-        <div class="unit-card">
-            <div class="row-badge" style="background:${p.row==='front'?'#a22':'#22a'}">${p.row.toUpperCase()}</div>
-            <img src="No.${p.id}.png" onerror="this.src='https://via.placeholder.com/100?text=No.${p.id}'">
-            <div style="font-size:11px;"><b>No.${String(p.id).padStart(2,'0')} ${p.name}</b></div>
-            <div style="font-size:10px; color:#aaa;">AS: ${p.as}</div>
-            <div style="font-size:10px;">Lv.${p.lv} | HP:${p.hp} ATK:${p.atk}</div>
-            <button class="btn-action" onclick="lvUp(${p.id})">強化 (${p.lv * 500}G)</button>
-        </div>
+    const listBody = document.getElementById('roster-list-body');
+    listBody.innerHTML = activeRoster.map(p => `
+        <tr>
+            <td>${p.name}</td>
+            <td>${p.hp}</td>
+            <td>${p.atk}</td>
+            <td>${p.dex}</td>
+            <td><button class="detail-btn" onclick="alert('Lv.${p.lv} ${p.name}')">詳細</button></td>
+        </tr>
     `).join('');
     document.getElementById('gold-display').innerText = `Gold: ${gold.toLocaleString()}`;
 }
 
-function lvUp(id) {
-    const p = activeRoster.find(u => u.id === id);
-    const cost = BigInt(p.lv * 500);
-    if (gold >= cost) {
-        gold -= cost; p.lv++; p.hp += 40n; p.atk += 6n; renderRoster();
-    }
+// 部隊編成（画像あり）
+function renderParty() {
+    const partyArea = document.getElementById('party-current');
+    const partyUnits = activeRoster.filter(u => currentPartyIds.includes(u.id));
+    partyArea.innerHTML = partyUnits.map(p => `
+        <div class="unit-card">
+            <img src="No.${p.id}.png" onerror="this.src='https://via.placeholder.com/100?text=No.${p.id}'">
+            <div style="font-size:11px;"><b>${p.name}</b></div>
+            <div style="font-size:10px;">DEX: ${p.dex}</div>
+        </div>
+    `).join('');
+}
+
+function sortRoster(key) {
+    activeRoster.sort((a, b) => Number(b[key] - a[key]));
+    renderRoster();
 }
 
 function showTab(id) {
@@ -151,18 +172,16 @@ function showTab(id) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`tab-${id}`).classList.add('active');
-    event.currentTarget.classList.add('active');
+    document.getElementById(`nav-${id}`).classList.add('active');
     if(id === 'roster') renderRoster();
+    if(id === 'party') renderParty();
 }
 
-// 探索ロジック
 async function startExpedition() {
-    floor = parseInt(document.getElementById('start-floor').value);
-    autoMode = document.getElementById('auto-mode').checked;
-    isExploring = true; meter = 0; stackedGold = 0n;
+    floor = 1; isExploring = true; meter = 0; stackedGold = 0n;
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-exploring').classList.add('active');
-    log(`${floor}F 探索開始...`);
+    log("探索開始...");
     loop();
 }
 
@@ -171,68 +190,65 @@ async function loop() {
         meter++;
         renderExploreUI();
         
-        // 50m地点
-        if(meter === 50 && !autoMode) {
-            document.getElementById('branch-choice').style.display = 'flex';
-            return; 
-        }
-        
-        // 100m地点
         if(meter >= 100) {
-            await encounter(true); // ボス
+            await encounter(true);
             if(!isExploring) return;
-            document.getElementById('choice-title').innerText = `${floor}F 踏破！さらに進みますか？`;
             document.getElementById('branch-choice').style.display = 'flex';
             return;
         }
 
-        // 50m以降も継続するランダムイベント
         const r = Math.random();
         if(r < 0.1) await encounter(false);
-        else if(r < 0.15) findChest();
-        else if(r < 0.17) triggerTrap();
+        else if(r < 0.15) await dexChallenge("宝箱");
+        else if(r < 0.18) await dexChallenge("罠");
 
         await new Promise(res => setTimeout(res, 150));
     }
 }
 
-function handleChoice(proceed) {
-    document.getElementById('branch-choice').style.display = 'none';
-    if(proceed) {
-        if(meter >= 100) { floor++; meter = 0; }
-        loop();
-    } else {
-        isExploring = false; gold += stackedGold;
-        log(`拠点へ帰還。獲得ゴールド: ${stackedGold}`);
-        showTab('roster');
+// 技量チャレンジ：全キャラが技量の高い順に挑戦
+async function dexChallenge(type) {
+    const isChest = type === "宝箱";
+    const party = activeRoster
+        .filter(u => currentPartyIds.includes(u.id))
+        .sort((a, b) => Number(b.dex - a.dex));
+    
+    log(`${type}を発見！`);
+    await new Promise(r => setTimeout(r, 600));
+
+    for (let char of party) {
+        log(`${char.name}が挑戦中...`);
+        await new Promise(r => setTimeout(r, 400));
+        
+        // 判定ロジック（dexが高いほど成功しやすい）
+        if (Math.random() * 100 < Number(char.dex)) {
+            const reward = BigInt(floor * (isChest ? 100 : 0));
+            stackedGold += reward;
+            log(`${char.name}が成功！ ${isChest ? reward + 'G獲得' : '回避完了'}`);
+            await new Promise(r => setTimeout(r, 800));
+            return;
+        }
     }
+    
+    // 全員失敗
+    log(`全員失敗... ${isChest ? '中身を壊した' : 'ダメージを受けた'}`);
+    if(!isChest) stackedGold = stackedGold * 8n / 10n;
+    await new Promise(r => setTimeout(r, 800));
 }
 
 async function encounter(isBoss) {
-    const eName = isBoss ? "階層守護者" : "魔物";
-    document.getElementById('target-label').innerText = eName;
-    document.getElementById('enemy-img').style.display = 'block';
-    document.getElementById('enemy-img').src = isBoss ? "boss.png" : "mob.png";
-    
-    log(`${eName}が出現！`);
-    await new Promise(res => setTimeout(res, 800)); // 戦闘演出
-    
+    log(`${isBoss ? "守護者" : "魔物"}が出現！`);
+    await new Promise(res => setTimeout(res, 800));
     const winGold = BigInt(floor * (isBoss ? 1000 : 150));
     stackedGold += winGold;
-    log(`${winGold}Gをスタック。`);
-    
-    document.getElementById('enemy-img').style.display = 'none';
-    document.getElementById('target-label').innerText = "";
+    log(`勝利！ ${winGold}Gスタック。`);
+    await new Promise(res => setTimeout(res, 500));
 }
 
-function findChest() {
-    log("宝箱を発見！");
-    stackedGold += BigInt(floor * 50);
-}
-
-function triggerTrap() {
-    log("罠にかかった！スタックゴールドが一部減少。");
-    stackedGold = stackedGold * 8n / 10n;
+function handleChoice(proceed) {
+    document.getElementById('branch-choice').style.display = 'none';
+    if(proceed) { floor++; meter = 0; loop(); }
+    else { isExploring = false; gold += stackedGold; showTab('roster'); }
 }
 
 function renderExploreUI() {
@@ -242,8 +258,8 @@ function renderExploreUI() {
 }
 
 function log(m) {
-    const w = document.getElementById('log-window');
-    w.innerHTML = `> ${m}<br>${w.innerHTML}`;
+    // 1行上書きログ
+    document.getElementById('log-window').innerText = `[LOG] ${m}`;
 }
 
 renderRoster();

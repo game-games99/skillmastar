@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BABEL: THE ASCENSION v1.36 (Revised)</title>
+    <title>BABEL: THE ASCENSION v1.36</title>
     <style>
         :root { --bg: #050505; --panel: #111; --acc: #C5A059; --hp: #ff4d4d; --ct: #4da6ff; --msg: #001a33; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'Noto Sans JP', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
@@ -14,22 +14,18 @@
         .nav-btn { background: #333; color: #fff; border: none; cursor: pointer; font-weight: bold; }
         .nav-btn.active { background: var(--acc); color: #000; }
 
-        /* タブ・カードUI */
         .tab-content { display: none; padding: 10px; }
         .tab-content.active { display: block; }
         
-        /* 騎士団リスト（軽量化：テキストベース） */
         .unit-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         .unit-table th { background: #222; color: var(--acc); padding: 8px; text-align: left; cursor: pointer; border-bottom: 1px solid #444; }
         .unit-table td { padding: 8px; border-bottom: 1px solid #222; }
 
-        /* 編成中カード */
         .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .unit-card { background: var(--panel); border: 1px solid #444; padding: 10px; border-radius: 4px; position: relative; }
         .unit-card img { width: 100%; height: 100px; object-fit: cover; border-bottom: 1px solid #333; margin-bottom: 5px; }
         .btn-action { background: #444; color: #fff; border: 1px solid #666; padding: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-size: 12px; }
 
-        /* ダンジョン内UI */
         #explore-view { position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; }
         #progress-ui { position: absolute; top: 10px; width: 90%; }
         .bar-bg { background: #333; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid #444; }
@@ -37,7 +33,6 @@
         #visual-box { width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; position: relative; }
         #visual-box img { max-width: 100%; max-height: 100%; display: none; }
         
-        /* 1行上書きログ */
         #log-window { position: absolute; bottom: 0; width: 100%; height: 50px; background: rgba(0,26,51,0.9); font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; color: #fff; border-top: 1px solid var(--acc); }
         
         .choice-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; display: none; }
@@ -85,7 +80,7 @@
                     <img id="chest-img" src="">
                 </div>
                 <div id="target-label" style="font-weight:bold; color:var(--hp); min-height:1.2em;"></div>
-                <div id="log-window">探索待機中...</div>
+                <div id="log-window"></div>
                 <div id="branch-choice" class="choice-overlay">
                     <h2 id="choice-title" style="color:var(--acc);">帰還しますか？</h2>
                     <button class="btn-action" style="width:240px; padding:12px; margin-bottom:10px; background:#a20;" onclick="handleChoice(true)">さらに進む</button>
@@ -102,7 +97,6 @@
 </div>
 
 <script>
-// 全20キャラ定義（技量dexを含む）
 const ROSTER_DATA = [
     { id:1, name:"グラディウス", row:"front", hp:500n, atk:25n, def:50n, dex:30n },
     { id:2, name:"ヴァレリア", row:"front", hp:320n, atk:48n, def:20n, dex:65n },
@@ -134,7 +128,6 @@ let floor = 1;
 let meter = 0;
 let stackedGold = 0n;
 
-// 騎士団リスト（画像なしテキスト）
 function renderRoster() {
     const listBody = document.getElementById('roster-list-body');
     listBody.innerHTML = activeRoster.map(p => `
@@ -143,13 +136,12 @@ function renderRoster() {
             <td>${p.hp}</td>
             <td>${p.atk}</td>
             <td>${p.dex}</td>
-            <td><button class="detail-btn" onclick="alert('Lv.${p.lv} ${p.name}')">詳細</button></td>
+            <td><button class="detail-btn">詳細</button></td>
         </tr>
     `).join('');
     document.getElementById('gold-display').innerText = `Gold: ${gold.toLocaleString()}`;
 }
 
-// 部隊編成（画像あり）
 function renderParty() {
     const partyArea = document.getElementById('party-current');
     const partyUnits = activeRoster.filter(u => currentPartyIds.includes(u.id));
@@ -157,7 +149,7 @@ function renderParty() {
         <div class="unit-card">
             <img src="No.${p.id}.png" onerror="this.src='https://via.placeholder.com/100?text=No.${p.id}'">
             <div style="font-size:11px;"><b>${p.name}</b></div>
-            <div style="font-size:10px;">DEX: ${p.dex}</div>
+            <div style="font-size:10px;">技量: ${p.dex}</div>
         </div>
     `).join('');
 }
@@ -181,7 +173,7 @@ async function startExpedition() {
     floor = 1; isExploring = true; meter = 0; stackedGold = 0n;
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-exploring').classList.add('active');
-    log("探索開始...");
+    log("探索開始");
     loop();
 }
 
@@ -189,59 +181,49 @@ async function loop() {
     while(isExploring) {
         meter++;
         renderExploreUI();
-        
         if(meter >= 100) {
             await encounter(true);
             if(!isExploring) return;
             document.getElementById('branch-choice').style.display = 'flex';
             return;
         }
-
         const r = Math.random();
         if(r < 0.1) await encounter(false);
-        else if(r < 0.15) await dexChallenge("宝箱");
-        else if(r < 0.18) await dexChallenge("罠");
-
+        else if(r < 0.15) await challenge("宝箱");
+        else if(r < 0.18) await challenge("罠");
         await new Promise(res => setTimeout(res, 150));
     }
 }
 
-// 技量チャレンジ：全キャラが技量の高い順に挑戦
-async function dexChallenge(type) {
+async function challenge(type) {
     const isChest = type === "宝箱";
     const party = activeRoster
         .filter(u => currentPartyIds.includes(u.id))
         .sort((a, b) => Number(b.dex - a.dex));
-    
-    log(`${type}を発見！`);
+    log(`${type}を発見`);
     await new Promise(r => setTimeout(r, 600));
-
     for (let char of party) {
-        log(`${char.name}が挑戦中...`);
+        log(`${char.name}が挑戦中`);
         await new Promise(r => setTimeout(r, 400));
-        
-        // 判定ロジック（dexが高いほど成功しやすい）
         if (Math.random() * 100 < Number(char.dex)) {
             const reward = BigInt(floor * (isChest ? 100 : 0));
             stackedGold += reward;
-            log(`${char.name}が成功！ ${isChest ? reward + 'G獲得' : '回避完了'}`);
+            log(`${char.name}が成功`);
             await new Promise(r => setTimeout(r, 800));
             return;
         }
     }
-    
-    // 全員失敗
-    log(`全員失敗... ${isChest ? '中身を壊した' : 'ダメージを受けた'}`);
+    log(`失敗`);
     if(!isChest) stackedGold = stackedGold * 8n / 10n;
     await new Promise(r => setTimeout(r, 800));
 }
 
 async function encounter(isBoss) {
-    log(`${isBoss ? "守護者" : "魔物"}が出現！`);
+    log(`${isBoss ? "守護者" : "魔物"}が出現`);
     await new Promise(res => setTimeout(res, 800));
     const winGold = BigInt(floor * (isBoss ? 1000 : 150));
     stackedGold += winGold;
-    log(`勝利！ ${winGold}Gスタック。`);
+    log(`勝利`);
     await new Promise(res => setTimeout(res, 500));
 }
 
@@ -258,8 +240,7 @@ function renderExploreUI() {
 }
 
 function log(m) {
-    // 1行上書きログ
-    document.getElementById('log-window').innerText = `[LOG] ${m}`;
+    document.getElementById('log-window').innerText = m;
 }
 
 renderRoster();

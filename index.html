@@ -5,91 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BABEL: THE ASCENSION v1.36</title>
     <style>
-        :root { --bg: #050505; --panel: #111; --acc: #C5A059; --hp: #ff4d4d; --ct: #4da6ff; --msg: #001a33; }
-        body { background: var(--bg); color: #e0e0e0; font-family: 'Noto Sans JP', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
-        #game-container { width: 100%; max-width: 600px; height: 100%; display: grid; grid-template-rows: 50px 1fr 60px; border: 1px solid #333; }
-        header { background: #222; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid var(--acc); font-size: 14px; font-weight: bold; }
-        #view-area { position: relative; overflow-y: auto; background: #000; }
-        nav { background: #222; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; }
+        :root { --bg: #050505; --panel: #002244; --acc: #C5A059; --hp-bg: #111; --hp-fill: #4caf50; --header-blue: #003366; }
+        body { background: #000; color: #e0e0e0; font-family: 'Noto Sans JP', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
+        #game-container { width: 100%; max-width: 600px; height: 100%; display: grid; grid-template-rows: 1fr 60px; position: relative; }
+        
+        /* 拠点用ヘッダー（探索中は隠す） */
+        header { background: #222; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid var(--acc); font-size: 14px; height: 50px; }
+        
+        #view-area { position: relative; overflow: hidden; background: #000; }
+        nav { background: #222; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; height: 60px; }
         .nav-btn { background: #333; color: #fff; border: none; cursor: pointer; font-weight: bold; }
         .nav-btn.active { background: var(--acc); color: #000; }
 
-        .tab-content { display: none; padding: 10px; }
+        .tab-content { display: none; padding: 10px; height: 100%; box-sizing: border-box; }
         .tab-content.active { display: block; }
-        
-        .unit-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
-        .unit-table th { background: #222; color: var(--acc); padding: 8px; text-align: left; cursor: pointer; border-bottom: 1px solid #444; }
-        .unit-table td { padding: 8px; border-bottom: 1px solid #222; }
 
-        .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .unit-card { background: var(--panel); border: 1px solid #444; padding: 10px; border-radius: 4px; position: relative; }
-        .unit-card img { width: 100%; height: 100px; object-fit: cover; border-bottom: 1px solid #333; margin-bottom: 5px; }
-        .btn-action { background: #444; color: #fff; border: 1px solid #666; padding: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-size: 12px; }
+        /* --- 探索・戦闘UI再現 --- */
+        #tab-exploring { padding: 0; background: #000; position: relative; }
+        
+        /* 上部ログ・進捗エリア */
+        .explore-header { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 80px;
+            background: var(--header-blue); display: flex; align-items: center; padding: 0 10px; z-index: 10;
+        }
+        .floor-circle {
+            width: 70px; height: 70px; background: rgba(255,255,255,0.1);
+            border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.3); margin-right: 15px;
+        }
+        .floor-circle .f-num { font-size: 10px; opacity: 0.7; }
+        .floor-circle .m-num { font-size: 24px; font-weight: bold; }
+        
+        #log-window { flex: 1; font-size: 16px; font-weight: bold; color: #fff; }
 
-        #explore-view { position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; }
-        #progress-ui { position: absolute; top: 10px; width: 90%; }
-        .bar-bg { background: #333; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid #444; }
-        #bar-fill { height: 100%; background: var(--acc); width: 0%; transition: width 0.2s; }
-        #visual-box { width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; position: relative; }
-        #visual-box img { max-width: 100%; max-height: 100%; display: none; }
-        
-        #log-window { position: absolute; bottom: 0; width: 100%; height: 50px; background: rgba(0,26,51,0.9); font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; color: #fff; border-top: 1px solid var(--acc); }
-        
+        /* 中央ビジュアルエリア */
+        #visual-area {
+            height: 60%; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(to bottom, #111, #000); position: relative;
+        }
+        #visual-area img { max-width: 80%; max-height: 80%; display: none; z-index: 2; }
+        #visual-area::after { content: ""; position: absolute; bottom: 15%; width: 60%; height: 10px; background: rgba(0,0,0,0.5); border-radius: 50%; filter: blur(5px); }
+
+        /* 下部ユニットエリア */
+        .party-container {
+            position: absolute; bottom: 0; width: 100%; height: 40%;
+            background: #000; display: flex; flex-direction: column; gap: 5px; padding: 5px; box-sizing: border-box;
+        }
+        .unit-row { display: flex; justify-content: center; gap: 5px; flex: 1; }
+        .unit-mini-card { 
+            flex: 1; max-width: 110px; background: var(--panel); border: 1px solid #004488; 
+            display: flex; flex-direction: column; position: relative; overflow: hidden;
+        }
+        .unit-mini-card .name-tag { background: #003366; font-size: 10px; text-align: center; padding: 2px; }
+        .unit-mini-card img { width: 100%; height: 60px; object-fit: cover; }
+        .unit-mini-card .hp-val { font-size: 9px; text-align: right; padding-right: 2px; }
+        .unit-mini-card .hp-bar-bg { background: var(--hp-bg); height: 6px; margin: 2px; border: 1px solid #333; }
+        .unit-mini-card .hp-bar-fill { height: 100%; background: var(--hp-fill); width: 100%; }
+
         .choice-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; display: none; }
     </style>
 </head>
 <body>
 <div id="game-container">
-    <header><div id="gold-display">Gold: 0</div><div id="floor-info">Babel HQ</div></header>
+    <header id="base-header">
+        <div id="gold-display">Gold: 0</div>
+        <div id="floor-info">Babel HQ</div>
+    </header>
+
     <main id="view-area">
-        <section id="tab-roster" class="tab-content active">
-            <h3 style="color:var(--acc);">解放の騎士団</h3>
-            <table class="unit-table">
-                <thead>
-                    <tr>
-                        <th onclick="sortRoster('hp')">HP</th>
-                        <th onclick="sortRoster('atk')">攻撃</th>
-                        <th onclick="sortRoster('dex')">技量</th>
-                        <th>詳細</th>
-                    </tr>
-                </thead>
-                <tbody id="roster-list-body"></tbody>
-            </table>
-        </section>
-
-        <section id="tab-party" class="tab-content">
-            <h3 style="color:var(--acc);">部隊編成</h3>
-            <div id="party-current" class="card-grid" style="margin-bottom:20px; border: 1px dashed var(--acc); padding: 10px;"></div>
-        </section>
-
+        <section id="tab-roster" class="tab-content active">騎士団リスト...</section>
+        <section id="tab-party" class="tab-content">部隊編成...</section>
         <section id="tab-dungeon" class="tab-content">
-            <h3 style="color:var(--acc);">塔の門</h3>
-            <button class="btn-action" style="background:#a20; padding:15px; font-size:18px; border:2px solid var(--acc);" onclick="startExpedition()">探索開始</button>
+            <button class="nav-btn" style="padding:20px;" onclick="startExpedition()">探索開始</button>
         </section>
 
-        <section id="tab-exploring" class="tab-content" style="height:100%; padding:0;">
-            <div id="explore-view">
-                <div id="progress-ui">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                        <span id="txt-floor-cur">1F</span> <span id="txt-meter-cur">0m</span>
-                    </div>
-                    <div class="bar-bg"><div id="bar-fill"></div></div>
+        <section id="tab-exploring" class="tab-content">
+            <div class="explore-header">
+                <div class="floor-circle">
+                    <span class="f-num" id="txt-floor-cur">F63</span>
+                    <span class="m-num" id="txt-meter-cur">0m</span>
                 </div>
-                <div id="visual-box">
-                    <img id="enemy-img" src="">
-                    <img id="chest-img" src="">
+                <div id="log-window">探索待機中</div>
+            </div>
+
+            <div id="visual-area">
+                <img id="enemy-img" src="">
+                <img id="chest-img" src="">
+            </div>
+
+            <div class="party-container" id="party-display-area">
                 </div>
-                <div id="target-label" style="font-weight:bold; color:var(--hp); min-height:1.2em;"></div>
-                <div id="log-window"></div>
-                <div id="branch-choice" class="choice-overlay">
-                    <h2 id="choice-title" style="color:var(--acc);">帰還しますか？</h2>
-                    <button class="btn-action" style="width:240px; padding:12px; margin-bottom:10px; background:#a20;" onclick="handleChoice(true)">さらに進む</button>
-                    <button class="btn-action" style="width:240px; padding:12px; background:#333;" onclick="handleChoice(false)">帰還</button>
-                </div>
+
+            <div id="branch-choice" class="choice-overlay">
+                <h2 style="color:var(--acc);">帰還しますか？</h2>
+                <button class="nav-btn" style="width:200px; margin-bottom:10px;" onclick="handleChoice(true)">進む</button>
+                <button class="nav-btn" style="width:200px;" onclick="handleChoice(false)">帰還</button>
             </div>
         </section>
     </main>
-    <nav>
+
+    <nav id="base-nav">
         <button id="nav-roster" class="nav-btn active" onclick="showTab('roster')">騎士団</button>
         <button id="nav-party" class="nav-btn" onclick="showTab('party')">編成</button>
         <button id="nav-dungeon" class="nav-btn" onclick="showTab('dungeon')">探索</button>
@@ -98,152 +113,103 @@
 
 <script>
 const ROSTER_DATA = [
-    { id:1, name:"グラディウス", row:"front", hp:500n, atk:25n, def:50n, dex:30n },
-    { id:2, name:"ヴァレリア", row:"front", hp:320n, atk:48n, def:20n, dex:65n },
-    { id:3, name:"バルド", row:"front", hp:450n, atk:55n, def:30n, dex:25n },
-    { id:4, name:"セレネ", row:"front", hp:300n, atk:52n, def:18n, dex:75n },
-    { id:5, name:"レイス", row:"front", hp:280n, atk:42n, def:15n, dex:85n },
-    { id:6, name:"リュカ", row:"back", hp:290n, atk:40n, def:18n, dex:70n },
-    { id:7, name:"アルベルト", row:"front", hp:340n, atk:46n, def:25n, dex:40n },
-    { id:8, name:"カエデ", row:"front", hp:380n, atk:50n, def:22n, dex:35n },
-    { id:9, name:"ジーク", row:"back", hp:260n, atk:60n, def:12n, dex:55n },
-    { id:10, name:"エリア", row:"back", hp:310n, atk:15n, def:20n, dex:45n },
-    { id:11, name:"ラウル", row:"back", hp:270n, atk:58n, def:14n, dex:50n },
-    { id:12, name:"ミラ", row:"back", hp:320n, atk:20n, def:24n, dex:40n },
-    { id:13, name:"キリガ", row:"front", hp:285n, atk:48n, def:16n, dex:90n },
-    { id:14, name:"リリス", row:"back", hp:305n, atk:44n, def:18n, dex:60n },
-    { id:15, name:"ゼイン", row:"front", hp:360n, atk:54n, def:28n, dex:45n },
-    { id:16, name:"イザナ", row:"front", hp:410n, atk:56n, def:24n, dex:50n },
-    { id:17, name:"ギル", row:"front", hp:550n, atk:35n, def:55n, dex:15n },
-    { id:18, name:"クロノ", row:"back", hp:275n, atk:45n, def:15n, dex:80n },
-    { id:19, name:"フィオナ", row:"front", hp:400n, atk:58n, def:26n, dex:55n },
-    { id:20, name:"アベル", row:"back", hp:350n, atk:65n, def:20n, dex:50n }
-].map(c => ({...c, lv:1}));
+    { id:1, name:"ドゥーガルド", hp:2362, maxHp:2362, dex:30 },
+    { id:2, name:"クローディア", hp:2984, maxHp:2984, dex:65 },
+    { id:3, name:"キャス", hp:1785, maxHp:1785, dex:25 },
+    { id:4, name:"アヤメ", hp:2117, maxHp:2117, dex:75 },
+    { id:5, name:"カルロス", hp:2323, maxHp:2323, dex:85 }
+];
 
 let gold = 10000n;
-let activeRoster = [...ROSTER_DATA];
-let currentPartyIds = [1, 2, 4, 5, 13]; 
 let isExploring = false;
-let floor = 1;
+let floor = 63;
 let meter = 0;
-let stackedGold = 0n;
 
-function renderRoster() {
-    const listBody = document.getElementById('roster-list-body');
-    listBody.innerHTML = activeRoster.map(p => `
-        <tr>
-            <td>${p.name}</td>
-            <td>${p.hp}</td>
-            <td>${p.atk}</td>
-            <td>${p.dex}</td>
-            <td><button class="detail-btn">詳細</button></td>
-        </tr>
-    `).join('');
-    document.getElementById('gold-display').innerText = `Gold: ${gold.toLocaleString()}`;
-}
+function renderBattleParty() {
+    const area = document.getElementById('party-display-area');
+    // スクショ通り3名+2名の構成
+    const row1 = ROSTER_DATA.slice(0, 3);
+    const row2 = ROSTER_DATA.slice(3, 5);
 
-function renderParty() {
-    const partyArea = document.getElementById('party-current');
-    const partyUnits = activeRoster.filter(u => currentPartyIds.includes(u.id));
-    partyArea.innerHTML = partyUnits.map(p => `
-        <div class="unit-card">
-            <img src="No.${p.id}.png" onerror="this.src='https://via.placeholder.com/100?text=No.${p.id}'">
-            <div style="font-size:11px;"><b>${p.name}</b></div>
-            <div style="font-size:10px;">技量: ${p.dex}</div>
-        </div>
-    `).join('');
-}
-
-function sortRoster(key) {
-    activeRoster.sort((a, b) => Number(b[key] - a[key]));
-    renderRoster();
+    const makeRow = (units) => `
+        <div class="unit-row">
+            ${units.map(u => `
+                <div class="unit-mini-card">
+                    <div class="name-tag">${u.name}</div>
+                    <img src="No.${u.id}.png" onerror="this.src='https://via.placeholder.com/100?text=UNIT'">
+                    <div class="hp-val">${u.hp}/${u.maxHp}</div>
+                    <div class="hp-bar-bg"><div class="hp-bar-fill" style="width:${(u.hp/u.maxHp)*100}%"></div></div>
+                </div>
+            `).join('')}
+        </div>`;
+    
+    area.innerHTML = makeRow(row1) + makeRow(row2);
 }
 
 function showTab(id) {
     if (isExploring) return;
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`tab-${id}`).classList.add('active');
-    document.getElementById(`nav-${id}`).classList.add('active');
-    if(id === 'roster') renderRoster();
-    if(id === 'party') renderParty();
 }
 
-async function startExpedition() {
-    floor = 1; isExploring = true; meter = 0; stackedGold = 0n;
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById('tab-exploring').classList.add('active');
-    log("探索開始");
+function startExpedition() {
+    isExploring = true;
+    meter = 0;
+    document.getElementById('base-header').style.display = 'none';
+    document.getElementById('base-nav').style.display = 'none';
+    document.getElementById('game-container').style.gridTemplateRows = '1fr';
+    
+    showTab('exploring');
+    renderBattleParty();
+    log("探索を開始しました");
     loop();
 }
 
 async function loop() {
     while(isExploring) {
         meter++;
-        renderExploreUI();
-        if(meter >= 100) {
-            await encounter(true);
-            if(!isExploring) return;
+        document.getElementById('txt-meter-cur').innerText = `${meter}m`;
+        document.getElementById('txt-floor-cur').innerText = `F${floor}`;
+
+        const r = Math.random();
+        if(r < 0.1) await encounter();
+        else if(r < 0.15) log("宝箱を見つけた！");
+
+        await new Promise(res => setTimeout(res, 400));
+        if(meter >= 20) {
             document.getElementById('branch-choice').style.display = 'flex';
             return;
         }
-        const r = Math.random();
-        if(r < 0.1) await encounter(false);
-        else if(r < 0.15) await challenge("宝箱");
-        else if(r < 0.18) await challenge("罠");
-        await new Promise(res => setTimeout(res, 150));
     }
 }
 
-async function challenge(type) {
-    const isChest = type === "宝箱";
-    const party = activeRoster
-        .filter(u => currentPartyIds.includes(u.id))
-        .sort((a, b) => Number(b.dex - a.dex));
-    log(`${type}を発見`);
-    await new Promise(r => setTimeout(r, 600));
-    for (let char of party) {
-        log(`${char.name}が挑戦中`);
-        await new Promise(r => setTimeout(r, 400));
-        if (Math.random() * 100 < Number(char.dex)) {
-            const reward = BigInt(floor * (isChest ? 100 : 0));
-            stackedGold += reward;
-            log(`${char.name}が成功`);
-            await new Promise(r => setTimeout(r, 800));
-            return;
-        }
-    }
-    log(`失敗`);
-    if(!isChest) stackedGold = stackedGold * 8n / 10n;
-    await new Promise(r => setTimeout(r, 800));
-}
-
-async function encounter(isBoss) {
-    log(`${isBoss ? "守護者" : "魔物"}が出現`);
-    await new Promise(res => setTimeout(res, 800));
-    const winGold = BigInt(floor * (isBoss ? 1000 : 150));
-    stackedGold += winGold;
-    log(`勝利`);
-    await new Promise(res => setTimeout(res, 500));
-}
-
-function handleChoice(proceed) {
-    document.getElementById('branch-choice').style.display = 'none';
-    if(proceed) { floor++; meter = 0; loop(); }
-    else { isExploring = false; gold += stackedGold; showTab('roster'); }
-}
-
-function renderExploreUI() {
-    document.getElementById('txt-floor-cur').innerText = `${floor}F`;
-    document.getElementById('txt-meter-cur').innerText = `${meter}m`;
-    document.getElementById('bar-fill').style.width = `${meter}%`;
+async function encounter() {
+    const enemyImg = document.getElementById('enemy-img');
+    enemyImg.src = "ghost.png"; // イメージ
+    enemyImg.style.display = 'block';
+    log("LV19ゴーストが現れた！");
+    await new Promise(res => setTimeout(res, 1000));
+    enemyImg.style.display = 'none';
+    log("ゴーストを撃破！");
 }
 
 function log(m) {
     document.getElementById('log-window').innerText = m;
 }
 
-renderRoster();
+function handleChoice(proceed) {
+    document.getElementById('branch-choice').style.display = 'none';
+    if(!proceed) {
+        isExploring = false;
+        document.getElementById('base-header').style.display = 'flex';
+        document.getElementById('base-nav').style.display = 'grid';
+        document.getElementById('game-container').style.gridTemplateRows = '50px 1fr 60px';
+        showTab('roster');
+    } else {
+        meter = 0;
+        loop();
+    }
+}
 </script>
 </body>
 </html>

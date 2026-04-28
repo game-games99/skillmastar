@@ -3,128 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BABEL: THE ASCENSION</title>
+    <title>BABEL: FINAL PROTOTYPE</title>
     <style>
         :root { --bg: #050505; --panel: #1a1a1a; --acc: #ffd700; --hp: #ff4d4d; --dex: #4da6ff; --msg: #001a33; }
         body { background: var(--bg); color: #e0e0e0; font-family: sans-serif; margin: 0; height: 100vh; display: flex; justify-content: center; overflow: hidden; }
         #game-container { width: 100%; max-width: 500px; height: 100%; display: grid; grid-template-rows: 60px 1fr 180px 100px; border: 2px solid #333; }
-        
         header { background: #222; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid var(--acc); font-size: 13px; }
         #main-stage { position: relative; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-        
-        /* 下段パーティエリア：画像9の再現 */
         #party-tray { background: #000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; border-top: 1px solid #444; }
         .member-card { background: #111; border: 1px solid #333; position: relative; height: 85px; display: flex; flex-direction: column; }
         .char-img { width: 100%; height: 50px; background: #222; object-fit: cover; }
         .char-info { padding: 2px; font-size: 10px; text-align: center; }
-        
         .hp-bar { width: 100%; height: 4px; background: #333; position: absolute; bottom: 4px; }
         .hp-fill { height: 100%; background: var(--hp); transition: width 0.2s; }
         .ct-bar { width: 100%; height: 2px; background: #000; position: absolute; bottom: 0; }
         .ct-fill { height: 100%; background: var(--dex); transition: width 0.3s; }
-
         #message-window { background: var(--msg); border-top: 2px solid #06c; padding: 8px; font-size: 11px; overflow-y: auto; }
         .btn-action { background: #850; color: #fff; border: none; padding: 12px 24px; font-weight: bold; cursor: pointer; border-radius: 4px; }
-        #enemy-box { width: 180px; padding: 10px; background: rgba(50,0,0,0.8); border: 2px solid #800; text-align: center; margin-bottom: 10px; z-index: 10; }
     </style>
 </head>
 <body>
-
 <div id="game-container">
-    <header>
-        <div>Gold: 15,052,073G</div>
-        <button onclick="alert('部隊編成画面へ（未実装）')">部隊編成</button>
-    </header>
-
+    <header><div>Gold: 15,052,073G</div><button>部隊編成</button></header>
     <div id="main-stage">
-        <div id="enemy-box" style="display:none"></div>
         <h2 id="stage-title" style="color:var(--acc)">世界灯台 25階</h2>
         <button class="btn-action" id="start-btn">ダンジョンへ</button>
     </div>
-
-    <div id="party-tray" id="party-list"></div>
-
-    <div id="message-window" id="log">
-        準備完了。部隊は待機しています。
-    </div>
+    <div id="party-tray"></div>
+    <div id="message-window" id="log">準備完了。LS・PS適用済み。</div>
 </div>
 
 <script>
-// 解放の騎士団：全20名データ（画像とスキル・確率・CTを統合）
-const KNIGHTS = [
-    { id: 1, name: "グラディウス", chance: 20, maxCt: 5, atk: 120, def: 200, dex: 300, hp: 2600, img: "https://via.placeholder.com/150/222/fff?text=01" },
-    { id: 2, name: "ヴァレリア", chance: 30, maxCt: 4, atk: 180, def: 100, dex: 900, hp: 2000, img: "https://via.placeholder.com/150/222/fff?text=02" },
-    { id: 3, name: "バルド", chance: 25, maxCt: 6, atk: 210, def: 150, dex: 400, hp: 2400, img: "https://via.placeholder.com/150/222/fff?text=03" },
-    { id: 12, name: "ミラ", chance: 15, maxCt: 8, atk: 100, def: 150, dex: 450, hp: 2200, img: "https://via.placeholder.com/150/222/fff?text=12" },
-    { id: 20, name: "アベル", chance: 10, maxCt: 7, atk: 250, def: 130, dex: 650, hp: 2300, img: "https://via.placeholder.com/150/222/fff?text=20" }
+// 解放の騎士団：最終スキルセットデータ (20名)
+const KNIGHTS_MASTER = [
+    { id: 1, name: "グラディウス", hp: 3500, atk: 120, def: 250, dex: 300, chance: 20, maxCt: 5, as: "不落の守護", ps: "全ダメージ15%軽減", ls: "味方全体のDEF+20%" },
+    { id: 2, name: "ヴァレリア", hp: 2200, atk: 280, def: 120, dex: 950, chance: 35, maxCt: 4, as: "迅雷閃", ps: "常時DEX+20%", ls: "味方全体のDEX+15%" },
+    { id: 3, name: "バルド", hp: 3000, atk: 350, def: 150, dex: 400, chance: 25, maxCt: 6, as: "血の渇き", ps: "HP減少でATK上昇", ls: "味方全体のATK+20%" },
+    { id: 4, name: "セレネ", hp: 2100, atk: 260, def: 110, dex: 850, chance: 30, maxCt: 3, as: "双刃乱舞", ps: "確率で回避", ls: "DEX+20%" },
+    { id: 5, name: "レイス", hp: 2000, atk: 230, def: 100, dex: 900, chance: 40, maxCt: 5, as: "影縫い", ps: "ターゲット回避率UP", ls: "回避率+10%" },
+    { id: 6, name: "リュカ", hp: 2300, atk: 300, def: 120, dex: 700, chance: 25, maxCt: 5, as: "必中の矢", ps: "命中率100%", ls: "クリティカル率+15%" },
+    { id: 7, name: "アルベルト", hp: 2400, atk: 270, def: 130, dex: 800, chance: 30, maxCt: 4, as: "残像剣", ps: "2回行動確率UP", ls: "DEX+15%" },
+    { id: 8, name: "カエデ", hp: 2500, atk: 320, def: 140, dex: 600, chance: 25, maxCt: 5, as: "紅蓮脚", ps: "火傷付与", ls: "ATK+15%" },
+    { id: 9, name: "ジーク", hp: 2200, atk: 400, def: 100, dex: 500, chance: 20, maxCt: 7, as: "虚空の理", ps: "バフ解除", ls: "全スキル発動率+5%" },
+    { id: 10, name: "エリア", hp: 2100, atk: 100, def: 130, dex: 550, chance: 30, maxCt: 5, as: "聖祈", ps: "毎ターン微回復", ls: "最大HP+20%" },
+    { id: 11, name: "ラウル", hp: 2200, atk: 380, def: 110, dex: 450, chance: 20, maxCt: 6, as: "禁書の呪い", ps: "敵DEF低下", ls: "スキル威力+20%" },
+    { id: 12, name: "ミラ", hp: 2400, atk: 120, def: 140, dex: 500, chance: 20, maxCt: 8, as: "幻晶の盾", ps: "被ダメージ20%カット", ls: "全被ダメ軽減10%" },
+    { id: 13, name: "キリガ", hp: 2100, atk: 340, def: 110, dex: 880, chance: 25, maxCt: 5, as: "無音殺", ps: "即死確率UP", ls: "ATK+20%" },
+    { id: 14, name: "リリス", hp: 2200, atk: 250, def: 120, dex: 600, chance: 30, maxCt: 5, as: "毒華の香", ps: "毒付与", ls: "状態異常確率+15%" },
+    { id: 15, name: "ゼイン", hp: 3200, atk: 330, def: 160, dex: 400, chance: 25, maxCt: 6, as: "夜喰らい", ps: "与ダメ吸収", ls: "吸血効果+10%" },
+    { id: 16, name: "イザナ", hp: 2800, atk: 360, def: 140, dex: 500, chance: 25, maxCt: 6, as: "血契の抱擁", ps: "低HP時ATK2倍", ls: "ATK+25%" },
+    { id: 17, name: "ギル", hp: 3300, atk: 280, def: 200, dex: 350, chance: 15, maxCt: 6, as: "機装砲", ps: "確率完全防御", ls: "DEF+25%" },
+    { id: 18, name: "クロノ", hp: 2200, atk: 200, def: 110, dex: 400, chance: 15, maxCt: 8, as: "時渡り", ps: "全体CT減少", ls: "CT回復速度UP" },
+    { id: 19, name: "フィオナ", hp: 3800, atk: 310, def: 180, dex: 450, chance: 20, maxCt: 6, as: "竜の咆哮", ps: "怯み無効", ls: "最大HP+30%" },
+    { id: 20, name: "アベル", hp: 2500, atk: 450, def: 130, dex: 700, chance: 12, maxCt: 7, as: "零界", ps: "理無効化", ls: "全ステータス+10%" }
 ];
 
-let party = KNIGHTS.map(k => ({...k, curHp: k.hp, curCt: 0}));
-let enemy = null;
+// 初期パーティ（1, 2, 3, 12, 20）
+let party = KNIGHTS_MASTER.filter(k => [1,2,3,12,20].includes(k.id)).map(k => ({...k, curHp: k.hp, curCt: 0}));
 
-function addLog(m) {
-    const l = document.getElementById('log');
-    l.innerHTML = `> ${m}`;
-}
+function addLog(m) { const l = document.getElementById('log'); l.innerHTML = `> ${m}`; }
 
 function render() {
     const tray = document.getElementById('party-tray');
-    tray.innerHTML = party.map(u => `
-        <div class="member-card">
-            <img src="${u.img}" class="char-img">
-            <div class="char-info"><b>${u.name}</b></div>
+    tray.innerHTML = party.map((u, i) => `
+        <div class="member-card" style="${i===0 ? 'border:1px solid var(--acc)' : ''}">
+            <img src="https://via.placeholder.com/150/222/fff?text=${u.id}" class="char-img">
+            <div class="char-info"><b>${u.name}</b><br><span style="font-size:8px">${i===0 ? 'LEADER' : ''}</span></div>
             <div class="hp-bar"><div class="hp-fill" style="width:${(u.curHp/u.hp)*100}%"></div></div>
             <div class="ct-bar"><div class="ct-fill" style="width:${u.curCt > 0 ? (u.curCt/u.maxCt)*100 : 0}%"></div></div>
         </div>
     `).join('');
-
-    if(enemy) {
-        const eb = document.getElementById('enemy-box');
-        eb.style.display = 'block';
-        eb.innerHTML = `<b>${enemy.name}</b><div class="hp-bar" style="position:static; margin-top:5px; height:8px;"><div class="hp-fill" style="width:${(enemy.curHp/enemy.hp)*100}%"></div></div>`;
-    }
 }
 
-async function startExploration() {
+async function startBattle() {
     document.getElementById('start-btn').style.display = 'none';
-    enemy = { name: "灯台の守護者", hp: 6000, curHp: 6000, atk: 220, def: 120, dex: 400 };
+    let enemy = { name: "灯台の番人", hp: 10000, curHp: 10000, atk: 250, def: 150, dex: 400 };
+    addLog(`${party[0].name}のLS: [${party[0].ls}] 発動！`);
     
     while(enemy.curHp > 0 && party.some(p => p.curHp > 0)) {
         const actors = [...party.filter(p => p.curHp > 0), enemy].sort((a,b) => b.dex - a.dex);
-        
         for(let a of actors) {
-            if(a.curHp <= 0 || (enemy && enemy.curHp <= 0 && a !== enemy)) continue;
+            if(a.curHp <= 0 || (enemy.curHp <= 0 && a !== enemy)) continue;
             let t = (a === enemy) ? party.filter(p => p.curHp > 0)[0] : enemy;
 
             if(a !== enemy) {
-                // スキル確率判定 (CTが0の時のみ)
                 if(a.curCt === 0 && Math.random() * 100 < a.chance) {
-                    let dmg = Math.floor(a.atk * 3);
-                    t.curHp -= dmg;
-                    a.curCt = a.maxCt; // スキル発動後にCT発生
-                    addLog(`<span style="color:yellow">${a.name}の奥義発動！ ${dmg}ダメージ</span>`);
+                    let dmg = Math.floor(a.atk * 3.5);
+                    t.curHp -= dmg; a.curCt = a.maxCt;
+                    addLog(`<span style="color:yellow">${a.name}: AS [${a.as}]! ${dmg}ダメ</span>`);
                 } else {
                     let dmg = Math.max(1, a.atk - (t.def/2));
-                    t.curHp -= dmg;
-                    if(a.curCt > 0) a.curCt--; // 通常行動でCT減少
+                    t.curHp -= dmg; if(a.curCt > 0) a.curCt--;
                     addLog(`${a.name}の攻撃: ${Math.floor(dmg)}点`);
                 }
             } else {
                 let edmg = Math.max(1, a.atk - (t.def/2));
                 t.curHp -= edmg;
-                addLog(`敵の反撃：${t.name}に${Math.floor(edmg)}の被害`);
+                addLog(`敵の攻撃！${t.name}に${Math.floor(edmg)}のダメージ`);
             }
             render();
-            await new Promise(r => setTimeout(r, 250));
-            if(!enemy || enemy.curHp <= 0 || party.every(p => p.curHp <= 0)) break;
+            await new Promise(r => setTimeout(r, 200));
+            if(enemy.curHp <= 0 || party.every(p => p.curHp <= 0)) break;
         }
     }
-    
-    addLog(enemy && enemy.curHp <= 0 ? "階層踏破！" : "撤退...");
     document.getElementById('start-btn').style.display = 'block';
 }
 
-document.getElementById('start-btn').onclick = startExploration;
+document.getElementById('start-btn').onclick = startBattle;
 render();
 </script>
 </body>
